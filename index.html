@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PrintPocket 3D |PDV</title>
+    <title>PrintPocket 3D | PDV</title>
     <style>
         :root {
             --bg-primary: #0d1117;
@@ -111,19 +111,18 @@
         .pdv-acoes button { flex: 1; padding: 12px; font-size: 14px; }
         .pdv-ultimas { margin-top: 10px; font-size: 11px; color: var(--text-secondary); }
         .pdv-ultimas span { color: var(--accent-green); font-weight: 600; }
+        .pix-info { margin-top: 10px; padding: 12px; background: var(--bg-secondary); border-radius: var(--radius-sm); border: 1px solid var(--accent-green); }
+        .pix-info .pix-chave { font-size: 13px; font-weight: 600; color: var(--accent-green); }
+        .pix-info .pix-valor { font-size: 16px; font-weight: 700; color: var(--accent-cyan); }
 
-        .pix-qrcode-container { 
-            margin-top: 12px; padding: 14px; background: var(--bg-secondary); 
-            border-radius: var(--radius-sm); text-align: center; 
-            border: 2px solid var(--accent-green);
-            animation: fadeSlideIn 0.3s ease;
-        }
-        .pix-qrcode-container canvas { 
-            display: block; margin: 0 auto 10px; background: white; 
-            padding: 8px; border-radius: 8px; max-width: 200px;
-        }
-        .pix-chave { font-size: 11px; color: var(--text-secondary); word-break: break-all; margin-bottom: 8px; }
-        .pix-valor { font-size: 16px; font-weight: 700; color: var(--accent-green); margin-bottom: 6px; }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; display: flex; align-items: center; justify-content: center; }
+        .comprovante { background: white; color: black; padding: 30px; border-radius: var(--radius); max-width: 500px; width: 90%; font-family: 'Courier New', monospace; box-shadow: 0 8px 32px rgba(0,0,0,0.5); }
+        .comprovante h2 { text-align: center; margin-bottom: 20px; color: #0d1117; }
+        .comprovante .linha { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px; }
+        .comprovante .linha strong { color: #333; }
+        .comprovante .divisor { border-top: 1px dashed #999; margin: 12px 0; }
+        .comprovante .total { font-size: 20px; font-weight: bold; text-align: right; }
+        .comprovante .btn-imprimir { display: block; margin: 20px auto 0; padding: 10px 30px; background: var(--accent-cyan); color: black; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; }
 
         @media (max-width: 768px) {
             .sidebar { width: 60px; min-width: 60px; padding: 12px 6px; }
@@ -150,7 +149,7 @@
         <button class="nav-btn" data-page="vendas"><span class="nav-icon">💰</span> Vendas</button>
         <button class="nav-btn" data-page="relatorios"><span class="nav-icon">📋</span> Relatórios</button>
         <div class="sidebar-footer">
-            PrintPocket 3D © 2026<br>v2.5 Pix QR
+            PrintPocket 3D © 2026<br>v2.6 Comprovante
             <div class="save-indicator" id="saveIndicator">💾 Salvo automático</div>
         </div>
     </aside>
@@ -173,8 +172,12 @@
                         <div class="pdv-total-final"><span>TOTAL</span><span id="pdvTotalFinal">R$ 0,00</span></div>
                     </div>
                     <div class="pdv-cliente"><label style="font-size:11px;color:var(--text-secondary);">Cliente</label><select id="pdvCliente"><option value="">Avulso</option></select></div>
-                    <div class="pdv-pagamento"><label style="font-size:11px;color:var(--text-secondary);">Pagamento</label><select id="pdvPagamento" onchange="gerarQRCodePDV()"><option>Dinheiro</option><option>Cartão de Crédito</option><option>Cartão de Débito</option><option>Pix</option></select></div>
-                    <div id="pdvPixContainer" style="display:none;"></div>
+                    <div class="pdv-pagamento"><label style="font-size:11px;color:var(--text-secondary);">Pagamento</label><select id="pdvPagamento" onchange="mostrarInfoPixPDV()"><option>Dinheiro</option><option>Cartão de Crédito</option><option>Cartão de Débito</option><option>Pix</option></select></div>
+                    <div id="pdvPixInfo" class="pix-info" style="display:none;">
+                        <div class="pix-chave">Chave Pix: 99984301604</div>
+                        <div class="pix-valor" id="pdvPixValor">R$ 0,00</div>
+                        <button class="btn btn-sm btn-secondary" onclick="copiarChavePix()" style="margin-top:6px;">📋 Copiar Chave</button>
+                    </div>
                     <div class="pdv-acoes"><button class="btn btn-orange btn-lg" onclick="finalizarVendaPDV()">✅ Finalizar Venda</button></div>
                     <div class="pdv-ultimas" id="pdvUltimasVendas"></div>
                 </div>
@@ -218,7 +221,7 @@
         <!-- Vendas -->
         <div class="page" id="page-vendas">
             <div class="page-header"><div><h1>💰 Vendas</h1></div><button class="btn btn-primary" onclick="abrirFormVenda()">+ Nova</button></div>
-            <div id="formVenda" class="form-card" style="display:none;"><h3 id="formVendaTitulo">Nova Venda</h3><input type="hidden" id="vendaEditId"><div class="form-row"><div class="form-group"><label>Produto</label><select id="vendaProdutoSelect"></select></div><div class="form-group"><label>Qtd</label><input type="number" id="vendaQtd" min="1" value="1"></div><div class="form-group"><label>Desconto (R$)</label><input type="number" id="vendaDesconto" value="0" step="0.01"></div></div><div class="form-row"><div class="form-group"><label>Cliente</label><select id="vendaClienteSelect"><option value="">Avulso</option></select></div><div class="form-group"><label>Pagamento</label><select id="vendaPagamentoSelect" onchange="gerarQRCodeVenda()"><option>Dinheiro</option><option>Cartão de Crédito</option><option>Cartão de Débito</option><option>Pix</option></select></div></div><div id="vendaPreview" style="margin:10px 0;color:var(--accent-cyan);font-weight:600;"></div><div id="vendaPixContainer" style="display:none;"></div><button class="btn btn-primary" onclick="salvarVenda()">✅ Confirmar</button><button class="btn btn-secondary" onclick="fecharFormVenda()" style="margin-left:8px;">Cancelar</button></div>
+            <div id="formVenda" class="form-card" style="display:none;"><h3 id="formVendaTitulo">Nova Venda</h3><input type="hidden" id="vendaEditId"><div class="form-row"><div class="form-group"><label>Produto</label><select id="vendaProdutoSelect"></select></div><div class="form-group"><label>Qtd</label><input type="number" id="vendaQtd" min="1" value="1"></div><div class="form-group"><label>Desconto (R$)</label><input type="number" id="vendaDesconto" value="0" step="0.01"></div></div><div class="form-row"><div class="form-group"><label>Cliente</label><select id="vendaClienteSelect"><option value="">Avulso</option></select></div><div class="form-group"><label>Pagamento</label><select id="vendaPagamentoSelect"><option>Dinheiro</option><option>Cartão de Crédito</option><option>Cartão de Débito</option><option>Pix</option></select></div></div><div id="vendaPreview" style="margin:10px 0;color:var(--accent-cyan);font-weight:600;"></div><button class="btn btn-primary" onclick="salvarVenda()">✅ Confirmar</button><button class="btn btn-secondary" onclick="fecharFormVenda()" style="margin-left:8px;">Cancelar</button></div>
             <div class="table-container"><table><thead><tr><th>Data</th><th>Cliente</th><th>Itens</th><th>Total</th><th>Ações</th></tr></thead><tbody id="tabelaVendas"></tbody></table></div>
         </div>
 
@@ -240,85 +243,16 @@
 
             let carrinhoPDV = [];
 
-            function gerarQRCode(containerId, valor) {
-                const container = document.getElementById(containerId);
-                if (!container) return;
-                
-                // Limpa o container
-                container.innerHTML = '';
-                container.className = 'pix-qrcode-container';
-                
-                if (valor <= 0) {
-                    container.innerHTML = '<p style="color:var(--text-secondary);padding:10px;">Adicione itens ao carrinho para gerar o QR Code</p>';
-                    return;
-                }
-                
-                // Cria o payload Pix
-                const valorFormatado = valor.toFixed(2).replace('.', '');
-                const pixPayload = `00020126580014BR.GOV.BCB.PIX0136${PIX_KEY}5204000053039865405${valorFormatado}5802BR5925PrintPocket 3D Studio6009Sao Paulo62070503***6304`;
-                
-                // Cria canvas para QR Code
-                const canvas = document.createElement('canvas');
-                container.appendChild(canvas);
-                
-                // Gera QR Code
-                if (typeof QRCode !== 'undefined') {
-                    new QRCode(canvas, {
-                        text: pixPayload,
-                        width: 180,
-                        height: 180,
-                        colorDark: "#000000",
-                        colorLight: "#ffffff",
-                        correctLevel: QRCode.CorrectLevel.M
-                    });
-                } else {
-                    container.innerHTML += '<p style="color:var(--accent-red);">Biblioteca QR Code não carregada</p>';
-                }
-                
-                // Adiciona informações
-                const infoDiv = document.createElement('div');
-                infoDiv.innerHTML = `
-                    <div class="pix-valor" style="margin-top:10px;">R$ ${valor.toFixed(2).replace('.', ',')}</div>
-                    <div class="pix-chave">Chave Pix: ${PIX_KEY}</div>
-                    <button class="btn btn-sm btn-secondary" onclick="copiarChavePix()">📋 Copiar Chave</button>
-                `;
-                container.appendChild(infoDiv);
-            }
-
-            function gerarQRCodePDV() {
+            function mostrarInfoPixPDV() {
                 const pag = document.getElementById('pdvPagamento')?.value;
-                const container = document.getElementById('pdvPixContainer');
+                const container = document.getElementById('pdvPixInfo');
                 if (!container) return;
-                
                 if (pag === 'Pix') {
-                    container.style.display = 'block';
                     const desc = parseFloat(document.getElementById('pdvDesconto')?.value) || 0;
-                    const sub = carrinhoPDV.reduce((s, i) => s + i.preco * i.qtd, 0);
+                    const sub = carrinhoPDV.reduce((s,i) => s + i.preco*i.qtd, 0);
                     const total = Math.max(0, sub - desc);
-                    gerarQRCode('pdvPixContainer', total);
-                } else {
-                    container.style.display = 'none';
-                }
-            }
-
-            function gerarQRCodeVenda() {
-                const pag = document.getElementById('vendaPagamentoSelect')?.value;
-                const container = document.getElementById('vendaPixContainer');
-                if (!container) return;
-                
-                if (pag === 'Pix') {
+                    document.getElementById('pdvPixValor').textContent = 'R$ ' + total.toFixed(2).replace('.', ',');
                     container.style.display = 'block';
-                    const sel = document.getElementById('vendaProdutoSelect');
-                    const q = parseInt(document.getElementById('vendaQtd').value) || 0;
-                    const desc = parseFloat(document.getElementById('vendaDesconto').value) || 0;
-                    const opt = sel?.selectedOptions[0];
-                    
-                    if (opt && opt.dataset.preco && q > 0) {
-                        const total = Math.max(0, parseFloat(opt.dataset.preco) * q - desc);
-                        gerarQRCode('vendaPixContainer', total);
-                    } else {
-                        container.innerHTML = '<div class="pix-qrcode-container"><p style="color:var(--text-secondary);">Preencha produto e quantidade</p></div>';
-                    }
                 } else {
                     container.style.display = 'none';
                 }
@@ -328,13 +262,47 @@
                 navigator.clipboard.writeText(PIX_KEY).then(() => showToast('Chave Pix copiada! 📋')).catch(() => showToast('Erro ao copiar', 'error')); 
             }
 
+            function mostrarComprovante(venda) {
+                const data = getData();
+                const cliente = venda.clienteId ? data.clientes.find(c => c.id === venda.clienteId) : null;
+                const overlay = document.createElement('div');
+                overlay.className = 'modal-overlay';
+                overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
+                
+                overlay.innerHTML = `
+                    <div class="comprovante">
+                        <h2>PrintPocket 3D</h2>
+                        <p style="text-align:center;font-size:12px;margin-bottom:16px;">Comprovante de Venda</p>
+                        <div class="linha"><span>Data:</span><strong>${new Date(venda.data).toLocaleString('pt-BR')}</strong></div>
+                        <div class="linha"><span>Venda Nº:</span><strong>${venda.id}</strong></div>
+                        <div class="linha"><span>Cliente:</span><strong>${cliente ? cliente.nome : 'Avulso'}</strong></div>
+                        <div class="linha"><span>Pagamento:</span><strong>${venda.pagamento}</strong></div>
+                        ${venda.pagamento === 'Pix' ? `<div class="linha"><span>Chave Pix:</span><strong>${PIX_KEY}</strong></div>` : ''}
+                        <div class="divisor"></div>
+                        ${venda.itens.map(i => `
+                            <div class="linha">
+                                <span>${i.nome} x${i.qtd}</span>
+                                <span>R$ ${(i.preco * i.qtd).toFixed(2).replace('.', ',')}</span>
+                            </div>
+                        `).join('')}
+                        <div class="divisor"></div>
+                        <div class="linha"><span>Subtotal:</span><span>R$ ${venda.subtotal.toFixed(2).replace('.', ',')}</span></div>
+                        <div class="linha"><span>Desconto:</span><span>R$ ${venda.desconto.toFixed(2).replace('.', ',')}</span></div>
+                        <div class="total" style="margin-top:8px;">TOTAL: R$ ${venda.total.toFixed(2).replace('.', ',')}</div>
+                        <p style="text-align:center;margin-top:16px;font-size:11px;color:#666;">Obrigado pela preferência!</p>
+                        <button class="btn-imprimir" onclick="window.print()">🖨️ Imprimir Comprovante</button>
+                    </div>
+                `;
+                document.body.appendChild(overlay);
+            }
+
             const navBtns = document.querySelectorAll('.nav-btn');
             navBtns.forEach(btn => btn.addEventListener('click', () => {
                 navBtns.forEach(b => b.classList.remove('active')); btn.classList.add('active');
                 document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
                 document.getElementById('page-' + btn.dataset.page).classList.add('active');
                 const p = btn.dataset.page;
-                if (p === 'pdv') { renderPDVProdutos(); renderCarrinhoPDV(); atualizarTotaisPDV(); preencherSelectClientePDV(); gerarQRCodePDV(); }
+                if (p === 'pdv') { renderPDVProdutos(); renderCarrinhoPDV(); atualizarTotaisPDV(); preencherSelectClientePDV(); mostrarInfoPixPDV(); }
                 if (p === 'produtos') renderTabelaProdutos();
                 if (p === 'estoque') { renderTabelaEstoque(); preencherSelectEstoque(); }
                 if (p === 'clientes') renderTabelaClientes();
@@ -400,15 +368,15 @@
                 const saldo = data.estoque[pid]||0, existente = carrinhoPDV.find(i=>i.produtoId===pid);
                 if((existente?existente.qtd:0)+1 > saldo) { showToast('Estoque insuficiente!','error'); return; }
                 existente ? existente.qtd++ : carrinhoPDV.push({produtoId:pid, nome:prod.nome, preco:prod.preco, custo:prod.custo, qtd:1});
-                renderCarrinhoPDV(); atualizarTotaisPDV(); gerarQRCodePDV();
+                renderCarrinhoPDV(); atualizarTotaisPDV(); mostrarInfoPixPDV();
             }
-            function removerDoCarrinhoPDV(pid) { carrinhoPDV = carrinhoPDV.filter(i=>i.produtoId!==pid); renderCarrinhoPDV(); atualizarTotaisPDV(); gerarQRCodePDV(); }
+            function removerDoCarrinhoPDV(pid) { carrinhoPDV = carrinhoPDV.filter(i=>i.produtoId!==pid); renderCarrinhoPDV(); atualizarTotaisPDV(); mostrarInfoPixPDV(); }
             function alterarQtdPDV(pid, delta) {
                 const data = getData(); const item = carrinhoPDV.find(i=>i.produtoId===pid); if(!item)return;
                 const nova = item.qtd + delta;
                 if(nova<=0) { removerDoCarrinhoPDV(pid); return; }
                 if(nova > (data.estoque[pid]||0)) { showToast('Estoque máximo: '+(data.estoque[pid]||0),'error'); return; }
-                item.qtd = nova; renderCarrinhoPDV(); atualizarTotaisPDV(); gerarQRCodePDV();
+                item.qtd = nova; renderCarrinhoPDV(); atualizarTotaisPDV(); mostrarInfoPixPDV();
             }
             function renderCarrinhoPDV() {
                 document.getElementById('pdvCarrinhoItens').innerHTML = carrinhoPDV.length ? carrinhoPDV.map(i=>`<div class="pdv-item"><span class="pdv-item-nome">${i.nome}</span><div class="pdv-item-qtd"><button onclick="alterarQtdPDV(${i.produtoId},-1)">−</button><span>${i.qtd}</span><button onclick="alterarQtdPDV(${i.produtoId},1)">+</button></div><span class="pdv-item-total">R$ ${(i.preco*i.qtd).toFixed(2).replace('.',',')}</span><span class="pdv-item-remover" onclick="removerDoCarrinhoPDV(${i.produtoId})">✕</span></div>`).join('') : '<p style="color:var(--text-secondary);text-align:center;padding:20px;">Carrinho vazio</p>';
@@ -418,7 +386,7 @@
                 document.getElementById('pdvSubtotal').textContent = 'R$ '+sub.toFixed(2).replace('.',',');
                 document.getElementById('pdvTotalFinal').textContent = 'R$ '+Math.max(0,sub-desc).toFixed(2).replace('.',',');
             }
-            function limparCarrinhoPDV() { carrinhoPDV=[]; renderCarrinhoPDV(); atualizarTotaisPDV(); gerarQRCodePDV(); document.getElementById('pdvDesconto').value='0'; }
+            function limparCarrinhoPDV() { carrinhoPDV=[]; renderCarrinhoPDV(); atualizarTotaisPDV(); mostrarInfoPixPDV(); document.getElementById('pdvDesconto').value='0'; }
             function finalizarVendaPDV() {
                 if(!carrinhoPDV.length) { showToast('Carrinho vazio!','error'); return; }
                 const data = getData(); const descTotal = parseFloat(document.getElementById('pdvDesconto')?.value)||0;
@@ -428,11 +396,13 @@
                 const dataVenda = new Date().toISOString(); let totalGeral=0; const itens=[];
                 for(const i of carrinhoPDV) { totalGeral+=i.preco*i.qtd; data.estoque[i.produtoId]-=i.qtd; data.movimentacoes.push({produtoId:i.produtoId,tipo:'saida',qtd:i.qtd,data:dataVenda,motivo:'venda_pdv'}); itens.push({produtoId:i.produtoId, nome:i.nome, preco:i.preco, custo:i.custo, qtd:i.qtd}); }
                 const totalFinal = Math.max(0, totalGeral - descTotal);
-                data.vendas.push({ id: data.nextId++, data: dataVenda, clienteId, itens, subtotal: totalGeral, desconto: descTotal, total: parseFloat(totalFinal.toFixed(2)), pagamento: pag });
+                const venda = { id: data.nextId++, data: dataVenda, clienteId, itens, subtotal: totalGeral, desconto: descTotal, total: parseFloat(totalFinal.toFixed(2)), pagamento: pag };
+                data.vendas.push(venda);
                 saveData(data); showToast(`Venda finalizada! Total: R$ ${totalFinal.toFixed(2).replace('.',',')}`);
+                mostrarComprovante(venda);
                 const hoje = new Date().toLocaleDateString('pt-BR'), vHoje=data.vendas.filter(v=>new Date(v.data).toLocaleDateString('pt-BR')===hoje);
                 document.getElementById('pdvUltimasVendas').innerHTML = `<span>Hoje:</span> ${vHoje.length} vendas · R$ ${vHoje.reduce((s,v)=>s+v.total,0).toFixed(2).replace('.',',')}`;
-                document.getElementById('pdvPixContainer').style.display='none';
+                document.getElementById('pdvPixInfo').style.display='none';
                 limparCarrinhoPDV(); renderPDVProdutos(); renderTabelaVendas(); renderTabelaEstoque();
             }
 
@@ -462,27 +432,23 @@
             // Vendas
             function preencherSelectVenda(){ document.getElementById('vendaProdutoSelect').innerHTML = getData().produtos.map(p=>`<option value="${p.id}" data-preco="${p.preco}" data-custo="${p.custo}">${p.nome} — R$ ${p.preco.toFixed(2)}</option>`).join('')||'<option value="">—</option>'; atualizarPreviewVenda(); }
             function atualizarPreviewVenda(){ const sel=document.getElementById('vendaProdutoSelect'); const q=parseInt(document.getElementById('vendaQtd').value)||0, desc=parseFloat(document.getElementById('vendaDesconto').value)||0; const opt=sel?.selectedOptions[0]; document.getElementById('vendaPreview').textContent = opt&&opt.dataset.preco ? `Total: R$ ${Math.max(0,parseFloat(opt.dataset.preco)*q-desc).toFixed(2).replace('.',',')}` : ''; }
-            function abrirFormVenda(){ document.getElementById('vendaEditId').value=''; document.getElementById('formVendaTitulo').textContent='Nova Venda'; preencherSelectVenda(); preencherSelectClienteVenda(); document.getElementById('formVenda').style.display='block'; document.getElementById('vendaQtd').value='1'; document.getElementById('vendaDesconto').value='0'; document.getElementById('vendaPagamentoSelect').value='Dinheiro'; document.getElementById('vendaPixContainer').style.display='none'; atualizarPreviewVenda(); }
+            function abrirFormVenda(){ document.getElementById('vendaEditId').value=''; document.getElementById('formVendaTitulo').textContent='Nova Venda'; preencherSelectVenda(); preencherSelectClienteVenda(); document.getElementById('formVenda').style.display='block'; document.getElementById('vendaQtd').value='1'; document.getElementById('vendaDesconto').value='0'; document.getElementById('vendaPagamentoSelect').value='Dinheiro'; atualizarPreviewVenda(); }
             function fecharFormVenda(){ document.getElementById('formVenda').style.display='none'; }
             function salvarVenda(){ return registrarVendaSimples(); }
-            function registrarVendaSimples(){ const d=getData(); const pid=parseInt(document.getElementById('vendaProdutoSelect').value), q=parseInt(document.getElementById('vendaQtd').value)||0, desc=parseFloat(document.getElementById('vendaDesconto').value)||0, clienteId=document.getElementById('vendaClienteSelect').value?parseInt(document.getElementById('vendaClienteSelect').value):null, pag=document.getElementById('vendaPagamentoSelect').value||'Dinheiro'; if(!pid||q<=0){ showToast('Preencha corretamente','error'); return; } const prod=d.produtos.find(p=>p.id===pid); if(!prod)return; if((d.estoque[pid]||0)<q){ showToast('Estoque insuficiente','error'); return; } const total=Math.max(0,prod.preco*q-desc); d.estoque[pid]-=q; d.movimentacoes.push({produtoId:pid,tipo:'saida',qtd:q,data:new Date().toISOString(),motivo:'venda'}); d.vendas.push({id:d.nextId++,data:new Date().toISOString(),clienteId,itens:[{produtoId:pid,nome:prod.nome,preco:prod.preco,custo:prod.custo,qtd:q}],subtotal:prod.preco*q,desconto:desc,total:parseFloat(total.toFixed(2)),pagamento:pag}); saveData(d); fecharFormVenda(); renderTabelaVendas(); renderTabelaEstoque(); showToast(`Venda: R$ ${total.toFixed(2)}`); }
+            function registrarVendaSimples(){ const d=getData(); const pid=parseInt(document.getElementById('vendaProdutoSelect').value), q=parseInt(document.getElementById('vendaQtd').value)||0, desc=parseFloat(document.getElementById('vendaDesconto').value)||0, clienteId=document.getElementById('vendaClienteSelect').value?parseInt(document.getElementById('vendaClienteSelect').value):null, pag=document.getElementById('vendaPagamentoSelect').value||'Dinheiro'; if(!pid||q<=0){ showToast('Preencha corretamente','error'); return; } const prod=d.produtos.find(p=>p.id===pid); if(!prod)return; if((d.estoque[pid]||0)<q){ showToast('Estoque insuficiente','error'); return; } const total=Math.max(0,prod.preco*q-desc); d.estoque[pid]-=q; d.movimentacoes.push({produtoId:pid,tipo:'saida',qtd:q,data:new Date().toISOString(),motivo:'venda'}); const venda = {id:d.nextId++,data:new Date().toISOString(),clienteId,itens:[{produtoId:pid,nome:prod.nome,preco:prod.preco,custo:prod.custo,qtd:q}],subtotal:prod.preco*q,desconto:desc,total:parseFloat(total.toFixed(2)),pagamento:pag}; d.vendas.push(venda); saveData(d); fecharFormVenda(); renderTabelaVendas(); renderTabelaEstoque(); showToast(`Venda: R$ ${total.toFixed(2)}`); mostrarComprovante(venda); }
             function excluirVenda(id){ if(!confirm('Excluir venda? Estoque será restaurado.'))return; const d=getData(); const v=d.vendas.find(v=>v.id===id); if(v){ v.itens.forEach(i=>{ d.estoque[i.produtoId]=(d.estoque[i.produtoId]||0)+i.qtd; }); d.vendas=d.vendas.filter(v=>v.id!==id); saveData(d); renderTabelaVendas(); renderTabelaEstoque(); showToast('Venda excluída.'); } }
-            function renderTabelaVendas(){ const d=getData(); document.getElementById('tabelaVendas').innerHTML = d.vendas.length ? [...d.vendas].reverse().map(v=>{ const cliente = v.clienteId ? (d.clientes.find(c=>c.id===v.clienteId)?.nome||'—') : 'Avulso'; return `<tr><td>${new Date(v.data).toLocaleDateString('pt-BR')}</td><td>${cliente}</td><td>${v.itens.map(i=>`${i.nome}(${i.qtd})`).join(', ')}</td><td>R$ ${v.total.toFixed(2)}</td><td><button class="btn btn-danger btn-sm" onclick="excluirVenda(${v.id})">🗑️</button></td></tr>`; }).join('') : '<tr><td colspan="5">Nenhuma venda</td></tr>'; }
+            function renderTabelaVendas(){ const d=getData(); document.getElementById('tabelaVendas').innerHTML = d.vendas.length ? [...d.vendas].reverse().map(v=>{ const cliente = v.clienteId ? (d.clientes.find(c=>c.id===v.clienteId)?.nome||'—') : 'Avulso'; return `<tr><td>${new Date(v.data).toLocaleDateString('pt-BR')}</td><td>${cliente}</td><td>${v.itens.map(i=>`${i.nome}(${i.qtd})`).join(', ')}</td><td>R$ ${v.total.toFixed(2)}</td><td><button class="btn btn-secondary btn-sm" onclick="mostrarComprovante(getData().vendas.find(v=>v.id===${v.id}))">🧾</button> <button class="btn btn-danger btn-sm" onclick="excluirVenda(${v.id})">🗑️</button></td></tr>`; }).join('') : '<tr><td colspan="5">Nenhuma venda</td></tr>'; }
 
             // Relatórios
             function atualizarRelatorios(){ const d=getData(); const v=d.vendas; document.getElementById('relTotalVendas').textContent=v.length; const fat=v.reduce((s,x)=>s+x.total,0); document.getElementById('relFaturamento').textContent='R$ '+fat.toFixed(2).replace('.',','); document.getElementById('relLucroTotal').textContent='R$ '+v.reduce((s,x)=>s+x.itens.reduce((si,i)=>si+(i.preco-i.custo)*i.qtd,0)-x.desconto,0).toFixed(2).replace('.',','); document.getElementById('relTicketMedio').textContent='R$ '+(v.length?fat/v.length:0).toFixed(2).replace('.',','); document.getElementById('tabelaRelatorios').innerHTML = v.length ? [...v].reverse().map(v=>{ const cliente = v.clienteId ? (d.clientes.find(c=>c.id===v.clienteId)?.nome||'—') : 'Avulso'; return `<tr><td>${new Date(v.data).toLocaleDateString('pt-BR')}</td><td>${cliente}</td><td>${v.itens.map(i=>`${i.nome}(${i.qtd})`).join(', ')}</td><td>R$ ${v.total.toFixed(2)}</td></tr>`; }).join('') : '<tr><td colspan="4">Nenhum dado</td></tr>'; }
-            function exportarRelatorioPDF() {
-                const d=getData(); const v=d.vendas; const fat=v.reduce((s,x)=>s+x.total,0);
-                let html=`<div style="font-family:Arial;color:black;padding:20px;max-width:800px;margin:0 auto;"><h1>📋 Relatório PrintPocket 3D</h1><p>${new Date().toLocaleDateString('pt-BR')}</p><table style="width:100%;border-collapse:collapse;"><thead><tr><th>Data</th><th>Cliente</th><th>Itens</th><th>Total</th></tr></thead><tbody>${v.length?v.map(v=>{const cliente=v.clienteId?(d.clientes.find(c=>c.id===v.clienteId)?.nome||'—'):'Avulso';return`<tr><td>${new Date(v.data).toLocaleDateString('pt-BR')}</td><td>${cliente}</td><td>${v.itens.map(i=>`${i.nome}(${i.qtd})`).join(', ')}</td><td>R$ ${v.total.toFixed(2)}</td></tr>`;}).join(''):'<tr><td colspan="4">Nenhuma venda</td></tr>'}</tbody></table></div>`;
-                const div=document.getElementById('pdfRelatorio'); div.innerHTML=html; div.style.display='block'; window.print(); setTimeout(()=>div.style.display='none',500);
-            }
+            function exportarRelatorioPDF(){ const d=getData(); const v=d.vendas; const fat=v.reduce((s,x)=>s+x.total,0); let html=`<div style="font-family:Arial;color:black;padding:20px;max-width:800px;margin:0 auto;"><h1>📋 Relatório PrintPocket 3D</h1><p>${new Date().toLocaleDateString('pt-BR')}</p><table style="width:100%;border-collapse:collapse;"><thead><tr><th>Data</th><th>Cliente</th><th>Itens</th><th>Total</th></tr></thead><tbody>${v.length?v.map(v=>{const cliente=v.clienteId?(d.clientes.find(c=>c.id===v.clienteId)?.nome||'—'):'Avulso';return`<tr><td>${new Date(v.data).toLocaleDateString('pt-BR')}</td><td>${cliente}</td><td>${v.itens.map(i=>`${i.nome}(${i.qtd})`).join(', ')}</td><td>R$ ${v.total.toFixed(2)}</td></tr>`;}).join(''):'<tr><td colspan="4">Nenhuma venda</td></tr>'}</tbody></table></div>`; const div=document.getElementById('pdfRelatorio'); div.innerHTML=html; div.style.display='block'; window.print(); setTimeout(()=>div.style.display='none',500); }
             function exportarBackup(){ const d=getData(); const b=new Blob([JSON.stringify(d,null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='printpocket_backup_'+new Date().toISOString().slice(0,10)+'.json'; a.click(); }
             function importarBackup(){ const i=document.createElement('input'); i.type='file'; i.accept='.json'; i.onchange=e=>{ const f=e.target.files[0]; if(!f)return; const r=new FileReader(); r.onload=ev=>{ try{ const data=JSON.parse(ev.target.result); if(data.produtos&&data.vendas&&data.estoque!==undefined){ saveData(data); showToast('Restaurado!'); setTimeout(()=>location.reload(),1500); } }catch(ex){ showToast('Erro','error'); } }; r.readAsText(f); }; i.click(); }
 
-            document.getElementById('vendaQtd')?.addEventListener('input', ()=>{ atualizarPreviewVenda(); gerarQRCodeVenda(); });
-            document.getElementById('vendaDesconto')?.addEventListener('input', ()=>{ atualizarPreviewVenda(); gerarQRCodeVenda(); });
-            document.getElementById('vendaProdutoSelect')?.addEventListener('change', ()=>{ atualizarPreviewVenda(); gerarQRCodeVenda(); });
-            document.getElementById('pdvDesconto')?.addEventListener('input', ()=>{ atualizarTotaisPDV(); gerarQRCodePDV(); });
+            document.getElementById('vendaQtd')?.addEventListener('input', atualizarPreviewVenda);
+            document.getElementById('vendaDesconto')?.addEventListener('input', atualizarPreviewVenda);
+            document.getElementById('vendaProdutoSelect')?.addEventListener('change', atualizarPreviewVenda);
+            document.getElementById('pdvDesconto')?.addEventListener('input', ()=>{ atualizarTotaisPDV(); mostrarInfoPixPDV(); });
             ['calcPesoGrama','calcPrecoKg','calcTempoHora','calcCustoKwh','calcPotenciaW','calcMargemLucro','calcCustoAdicional'].forEach(id=>document.getElementById(id)?.addEventListener('input',calcularCusto));
             document.getElementById('calcTipoFilamento')?.addEventListener('change',calcularCusto);
 
@@ -509,10 +475,9 @@
             window.abrirFormCliente=abrirFormCliente; window.fecharFormCliente=fecharFormCliente; window.salvarCliente=salvarCliente; window.editarCliente=editarCliente; window.excluirCliente=excluirCliente; window.verHistoricoCliente=verHistoricoCliente;
             window.adicionarAoCarrinhoPDV=adicionarAoCarrinhoPDV; window.removerDoCarrinhoPDV=removerDoCarrinhoPDV; window.alterarQtdPDV=alterarQtdPDV; window.limparCarrinhoPDV=limparCarrinhoPDV; window.finalizarVendaPDV=finalizarVendaPDV;
             window.calcularCusto=calcularCusto; window.exportarRelatorioPDF=exportarRelatorioPDF; window.exportarBackup=exportarBackup; window.importarBackup=importarBackup;
-            window.gerarQRCodePDV=gerarQRCodePDV; window.gerarQRCodeVenda=gerarQRCodeVenda; window.copiarChavePix=copiarChavePix;
+            window.mostrarInfoPixPDV=mostrarInfoPixPDV; window.copiarChavePix=copiarChavePix; window.mostrarComprovante=mostrarComprovante;
             init();
         })();
     </script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </body>
 </html>

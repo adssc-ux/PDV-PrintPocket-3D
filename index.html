@@ -115,14 +115,15 @@
         .pix-info .pix-chave { font-size: 13px; font-weight: 600; color: var(--accent-green); }
         .pix-info .pix-valor { font-size: 16px; font-weight: 700; color: var(--accent-cyan); }
 
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; display: flex; align-items: center; justify-content: center; }
-        .comprovante { background: white; color: black; padding: 30px; border-radius: var(--radius); max-width: 500px; width: 90%; font-family: 'Courier New', monospace; box-shadow: 0 8px 32px rgba(0,0,0,0.5); }
-        .comprovante h2 { text-align: center; margin-bottom: 20px; color: #0d1117; }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; display: flex; align-items: center; justify-content: center; }
+        .comprovante { background: white; color: black; padding: 30px; border-radius: var(--radius); max-width: 500px; width: 90%; font-family: 'Courier New', monospace; box-shadow: 0 8px 32px rgba(0,0,0,0.5); position: relative; }
+        .comprovante h2 { text-align: center; margin-bottom: 20px; color: #0d1117; font-size: 20px; }
         .comprovante .linha { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px; }
         .comprovante .linha strong { color: #333; }
         .comprovante .divisor { border-top: 1px dashed #999; margin: 12px 0; }
         .comprovante .total { font-size: 20px; font-weight: bold; text-align: right; }
-        .comprovante .btn-imprimir { display: block; margin: 20px auto 0; padding: 10px 30px; background: var(--accent-cyan); color: black; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; }
+        .comprovante .btn-fechar { position: absolute; top: 10px; right: 10px; background: none; border: none; font-size: 20px; cursor: pointer; color: #999; }
+        .comprovante .btn-imprimir { display: block; margin: 20px auto 0; padding: 10px 30px; background: #00e5ff; color: black; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 14px; }
 
         @media (max-width: 768px) {
             .sidebar { width: 60px; min-width: 60px; padding: 12px 6px; }
@@ -149,7 +150,7 @@
         <button class="nav-btn" data-page="vendas"><span class="nav-icon">💰</span> Vendas</button>
         <button class="nav-btn" data-page="relatorios"><span class="nav-icon">📋</span> Relatórios</button>
         <div class="sidebar-footer">
-            PrintPocket 3D © 2026<br>v2.6 Comprovante
+            PrintPocket 3D © 2026<br>v2.7
             <div class="save-indicator" id="saveIndicator">💾 Salvo automático</div>
         </div>
     </aside>
@@ -262,20 +263,26 @@
                 navigator.clipboard.writeText(PIX_KEY).then(() => showToast('Chave Pix copiada! 📋')).catch(() => showToast('Erro ao copiar', 'error')); 
             }
 
-            function mostrarComprovante(venda) {
+            function mostrarComprovante(vendaId) {
                 const data = getData();
+                const venda = data.vendas.find(v => v.id === vendaId);
+                if (!venda) { showToast('Venda não encontrada!', 'error'); return; }
+                
                 const cliente = venda.clienteId ? data.clientes.find(c => c.id === venda.clienteId) : null;
+                const clienteNome = cliente ? cliente.nome : 'Avulso';
+                
                 const overlay = document.createElement('div');
                 overlay.className = 'modal-overlay';
-                overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
+                overlay.id = 'comprovanteOverlay';
                 
                 overlay.innerHTML = `
                     <div class="comprovante">
+                        <button class="btn-fechar" onclick="document.getElementById('comprovanteOverlay').remove()">✕</button>
                         <h2>PrintPocket 3D</h2>
-                        <p style="text-align:center;font-size:12px;margin-bottom:16px;">Comprovante de Venda</p>
+                        <p style="text-align:center;font-size:12px;margin-bottom:16px;color:#666;">Comprovante de Venda</p>
                         <div class="linha"><span>Data:</span><strong>${new Date(venda.data).toLocaleString('pt-BR')}</strong></div>
                         <div class="linha"><span>Venda Nº:</span><strong>${venda.id}</strong></div>
-                        <div class="linha"><span>Cliente:</span><strong>${cliente ? cliente.nome : 'Avulso'}</strong></div>
+                        <div class="linha"><span>Cliente:</span><strong>${clienteNome}</strong></div>
                         <div class="linha"><span>Pagamento:</span><strong>${venda.pagamento}</strong></div>
                         ${venda.pagamento === 'Pix' ? `<div class="linha"><span>Chave Pix:</span><strong>${PIX_KEY}</strong></div>` : ''}
                         <div class="divisor"></div>
@@ -293,7 +300,17 @@
                         <button class="btn-imprimir" onclick="window.print()">🖨️ Imprimir Comprovante</button>
                     </div>
                 `;
+                
+                // Remove overlay anterior se existir
+                const oldOverlay = document.getElementById('comprovanteOverlay');
+                if (oldOverlay) oldOverlay.remove();
+                
                 document.body.appendChild(overlay);
+                
+                // Fecha ao clicar fora do comprovante
+                overlay.addEventListener('click', function(e) {
+                    if (e.target === overlay) overlay.remove();
+                });
             }
 
             const navBtns = document.querySelectorAll('.nav-btn');
@@ -398,8 +415,12 @@
                 const totalFinal = Math.max(0, totalGeral - descTotal);
                 const venda = { id: data.nextId++, data: dataVenda, clienteId, itens, subtotal: totalGeral, desconto: descTotal, total: parseFloat(totalFinal.toFixed(2)), pagamento: pag };
                 data.vendas.push(venda);
-                saveData(data); showToast(`Venda finalizada! Total: R$ ${totalFinal.toFixed(2).replace('.',',')}`);
-                mostrarComprovante(venda);
+                saveData(data); 
+                showToast(`Venda #${venda.id} finalizada! Total: R$ ${totalFinal.toFixed(2).replace('.',',')}`);
+                
+                // Mostra o comprovante automaticamente
+                mostrarComprovante(venda.id);
+                
                 const hoje = new Date().toLocaleDateString('pt-BR'), vHoje=data.vendas.filter(v=>new Date(v.data).toLocaleDateString('pt-BR')===hoje);
                 document.getElementById('pdvUltimasVendas').innerHTML = `<span>Hoje:</span> ${vHoje.length} vendas · R$ ${vHoje.reduce((s,v)=>s+v.total,0).toFixed(2).replace('.',',')}`;
                 document.getElementById('pdvPixInfo').style.display='none';
@@ -435,9 +456,9 @@
             function abrirFormVenda(){ document.getElementById('vendaEditId').value=''; document.getElementById('formVendaTitulo').textContent='Nova Venda'; preencherSelectVenda(); preencherSelectClienteVenda(); document.getElementById('formVenda').style.display='block'; document.getElementById('vendaQtd').value='1'; document.getElementById('vendaDesconto').value='0'; document.getElementById('vendaPagamentoSelect').value='Dinheiro'; atualizarPreviewVenda(); }
             function fecharFormVenda(){ document.getElementById('formVenda').style.display='none'; }
             function salvarVenda(){ return registrarVendaSimples(); }
-            function registrarVendaSimples(){ const d=getData(); const pid=parseInt(document.getElementById('vendaProdutoSelect').value), q=parseInt(document.getElementById('vendaQtd').value)||0, desc=parseFloat(document.getElementById('vendaDesconto').value)||0, clienteId=document.getElementById('vendaClienteSelect').value?parseInt(document.getElementById('vendaClienteSelect').value):null, pag=document.getElementById('vendaPagamentoSelect').value||'Dinheiro'; if(!pid||q<=0){ showToast('Preencha corretamente','error'); return; } const prod=d.produtos.find(p=>p.id===pid); if(!prod)return; if((d.estoque[pid]||0)<q){ showToast('Estoque insuficiente','error'); return; } const total=Math.max(0,prod.preco*q-desc); d.estoque[pid]-=q; d.movimentacoes.push({produtoId:pid,tipo:'saida',qtd:q,data:new Date().toISOString(),motivo:'venda'}); const venda = {id:d.nextId++,data:new Date().toISOString(),clienteId,itens:[{produtoId:pid,nome:prod.nome,preco:prod.preco,custo:prod.custo,qtd:q}],subtotal:prod.preco*q,desconto:desc,total:parseFloat(total.toFixed(2)),pagamento:pag}; d.vendas.push(venda); saveData(d); fecharFormVenda(); renderTabelaVendas(); renderTabelaEstoque(); showToast(`Venda: R$ ${total.toFixed(2)}`); mostrarComprovante(venda); }
+            function registrarVendaSimples(){ const d=getData(); const pid=parseInt(document.getElementById('vendaProdutoSelect').value), q=parseInt(document.getElementById('vendaQtd').value)||0, desc=parseFloat(document.getElementById('vendaDesconto').value)||0, clienteId=document.getElementById('vendaClienteSelect').value?parseInt(document.getElementById('vendaClienteSelect').value):null, pag=document.getElementById('vendaPagamentoSelect').value||'Dinheiro'; if(!pid||q<=0){ showToast('Preencha corretamente','error'); return; } const prod=d.produtos.find(p=>p.id===pid); if(!prod)return; if((d.estoque[pid]||0)<q){ showToast('Estoque insuficiente','error'); return; } const total=Math.max(0,prod.preco*q-desc); d.estoque[pid]-=q; d.movimentacoes.push({produtoId:pid,tipo:'saida',qtd:q,data:new Date().toISOString(),motivo:'venda'}); const venda = {id:d.nextId++,data:new Date().toISOString(),clienteId,itens:[{produtoId:pid,nome:prod.nome,preco:prod.preco,custo:prod.custo,qtd:q}],subtotal:prod.preco*q,desconto:desc,total:parseFloat(total.toFixed(2)),pagamento:pag}; d.vendas.push(venda); saveData(d); fecharFormVenda(); renderTabelaVendas(); renderTabelaEstoque(); showToast(`Venda #${venda.id}: R$ ${total.toFixed(2)}`); mostrarComprovante(venda.id); }
             function excluirVenda(id){ if(!confirm('Excluir venda? Estoque será restaurado.'))return; const d=getData(); const v=d.vendas.find(v=>v.id===id); if(v){ v.itens.forEach(i=>{ d.estoque[i.produtoId]=(d.estoque[i.produtoId]||0)+i.qtd; }); d.vendas=d.vendas.filter(v=>v.id!==id); saveData(d); renderTabelaVendas(); renderTabelaEstoque(); showToast('Venda excluída.'); } }
-            function renderTabelaVendas(){ const d=getData(); document.getElementById('tabelaVendas').innerHTML = d.vendas.length ? [...d.vendas].reverse().map(v=>{ const cliente = v.clienteId ? (d.clientes.find(c=>c.id===v.clienteId)?.nome||'—') : 'Avulso'; return `<tr><td>${new Date(v.data).toLocaleDateString('pt-BR')}</td><td>${cliente}</td><td>${v.itens.map(i=>`${i.nome}(${i.qtd})`).join(', ')}</td><td>R$ ${v.total.toFixed(2)}</td><td><button class="btn btn-secondary btn-sm" onclick="mostrarComprovante(getData().vendas.find(v=>v.id===${v.id}))">🧾</button> <button class="btn btn-danger btn-sm" onclick="excluirVenda(${v.id})">🗑️</button></td></tr>`; }).join('') : '<tr><td colspan="5">Nenhuma venda</td></tr>'; }
+            function renderTabelaVendas(){ const d=getData(); document.getElementById('tabelaVendas').innerHTML = d.vendas.length ? [...d.vendas].reverse().map(v=>{ const cliente = v.clienteId ? (d.clientes.find(c=>c.id===v.clienteId)?.nome||'—') : 'Avulso'; return `<tr><td>${new Date(v.data).toLocaleDateString('pt-BR')}</td><td>${cliente}</td><td>${v.itens.map(i=>`${i.nome}(${i.qtd})`).join(', ')}</td><td>R$ ${v.total.toFixed(2)}</td><td><button class="btn btn-secondary btn-sm" onclick="mostrarComprovante(${v.id})">🧾</button> <button class="btn btn-danger btn-sm" onclick="excluirVenda(${v.id})">🗑️</button></td></tr>`; }).join('') : '<tr><td colspan="5">Nenhuma venda</td></tr>'; }
 
             // Relatórios
             function atualizarRelatorios(){ const d=getData(); const v=d.vendas; document.getElementById('relTotalVendas').textContent=v.length; const fat=v.reduce((s,x)=>s+x.total,0); document.getElementById('relFaturamento').textContent='R$ '+fat.toFixed(2).replace('.',','); document.getElementById('relLucroTotal').textContent='R$ '+v.reduce((s,x)=>s+x.itens.reduce((si,i)=>si+(i.preco-i.custo)*i.qtd,0)-x.desconto,0).toFixed(2).replace('.',','); document.getElementById('relTicketMedio').textContent='R$ '+(v.length?fat/v.length:0).toFixed(2).replace('.',','); document.getElementById('tabelaRelatorios').innerHTML = v.length ? [...v].reverse().map(v=>{ const cliente = v.clienteId ? (d.clientes.find(c=>c.id===v.clienteId)?.nome||'—') : 'Avulso'; return `<tr><td>${new Date(v.data).toLocaleDateString('pt-BR')}</td><td>${cliente}</td><td>${v.itens.map(i=>`${i.nome}(${i.qtd})`).join(', ')}</td><td>R$ ${v.total.toFixed(2)}</td></tr>`; }).join('') : '<tr><td colspan="4">Nenhum dado</td></tr>'; }

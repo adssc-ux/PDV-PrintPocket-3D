@@ -116,17 +116,20 @@
         .pix-info .pix-valor { font-size: 16px; font-weight: 700; color: var(--accent-cyan); }
 
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; display: flex; align-items: center; justify-content: center; }
-        .comprovante { background: white; color: black; padding: 30px; border-radius: 10px; max-width: 500px; width: 90%; font-family: 'Courier New', monospace; box-shadow: 0 8px 32px rgba(0,0,0,0.5); position: relative; }
-        .comprovante h2 { text-align: center; margin-bottom: 5px; color: black; font-size: 20px; }
-        .comprovante .subtitulo { text-align: center; font-size: 12px; color: black; margin-bottom: 16px; }
-        .comprovante .linha { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px; color: black; }
-        .comprovante .linha span { color: black; }
-        .comprovante .linha strong { color: black; }
-        .comprovante .divisor { border-top: 1px dashed #999; margin: 12px 0; }
-        .comprovante .total { font-size: 20px; font-weight: bold; text-align: right; color: black; }
-        .comprovante .btn-fechar { position: absolute; top: 10px; right: 10px; background: none; border: none; font-size: 20px; cursor: pointer; color: #999; }
-        .comprovante .btn-imprimir { display: block; margin: 20px auto 0; padding: 10px 30px; background: #333; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 14px; }
-        .comprovante .agradecimento { text-align: center; margin-top: 16px; font-size: 11px; color: black; }
+        .comprovante { background: white; color: #000000; padding: 30px; border-radius: var(--radius); max-width: 500px; width: 90%; font-family: 'Courier New', monospace; box-shadow: 0 8px 32px rgba(0,0,0,0.5); position: relative; }
+        .comprovante * { color: #000000 !important; }
+        .comprovante h2 { text-align: center; margin-bottom: 20px; font-size: 20px; color: #000000 !important; }
+        .comprovante .linha { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px; }
+        .comprovante .linha strong { color: #000000 !important; }
+        .comprovante .divisor { border-top: 1px dashed #000000; margin: 12px 0; }
+        .comprovante .total { font-size: 20px; font-weight: bold; text-align: right; color: #000000 !important; }
+        .comprovante .btn-fechar { position: absolute; top: 10px; right: 10px; background: none; border: none; font-size: 20px; cursor: pointer; color: #000000 !important; }
+        .comprovante .btn-imprimir { display: block; margin: 20px auto 0; padding: 10px 30px; background: #00e5ff; color: #000000 !important; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 14px; }
+        @media print {
+            .comprovante .btn-imprimir, .comprovante .btn-fechar { display: none !important; }
+            .modal-overlay { background: white; }
+            .comprovante { box-shadow: none; border-radius: 0; }
+        }
 
         @media (max-width: 768px) {
             .sidebar { width: 60px; min-width: 60px; padding: 12px 6px; }
@@ -282,32 +285,29 @@
                     <div class="comprovante">
                         <button class="btn-fechar" onclick="document.getElementById('comprovanteOverlay').remove()">✕</button>
                         <h2>PrintPocket 3D</h2>
-                        <p class="subtitulo">Comprovante de Venda</p>
+                        <p style="text-align:center;font-size:12px;margin-bottom:16px;">Comprovante de Venda</p>
                         <div class="linha"><span>Data:</span><strong>${new Date(venda.data).toLocaleString('pt-BR')}</strong></div>
                         <div class="linha"><span>Venda Nº:</span><strong>${venda.id}</strong></div>
                         <div class="linha"><span>Cliente:</span><strong>${clienteNome}</strong></div>
                         <div class="linha"><span>Pagamento:</span><strong>${venda.pagamento}</strong></div>
                         ${venda.pagamento === 'Pix' ? `<div class="linha"><span>Chave Pix:</span><strong>${PIX_KEY}</strong></div>` : ''}
                         <div class="divisor"></div>
-                        <div class="linha" style="font-weight:600;margin-bottom:4px;">
-                            <span>Item</span>
-                            <span>Qtd</span>
-                            <span>Unit.</span>
-                            <span>Total</span>
+                        <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1.5fr;gap:4px;margin-bottom:6px;font-weight:bold;font-size:12px;">
+                            <span>Produto</span><span>Qtd</span><span>Unit.</span><span>Total</span>
                         </div>
                         ${venda.itens.map(i => `
-                            <div class="linha">
-                                <span>${i.nome}</span>
-                                <span>${i.qtd}</span>
-                                <span>R$ ${i.preco.toFixed(2).replace('.', ',')}</span>
-                                <span>R$ ${(i.preco * i.qtd).toFixed(2).replace('.', ',')}</span>
+                            <div class="linha" style="font-size:13px;">
+                                <span style="flex:2;">${i.nome}</span>
+                                <span style="flex:1;text-align:center;">${i.qtd}</span>
+                                <span style="flex:1;text-align:right;">R$ ${i.preco.toFixed(2).replace('.', ',')}</span>
+                                <span style="flex:1.5;text-align:right;">R$ ${(i.preco * i.qtd).toFixed(2).replace('.', ',')}</span>
                             </div>
                         `).join('')}
                         <div class="divisor"></div>
                         <div class="linha"><span>Subtotal:</span><span>R$ ${venda.subtotal.toFixed(2).replace('.', ',')}</span></div>
                         <div class="linha"><span>Desconto:</span><span>R$ ${venda.desconto.toFixed(2).replace('.', ',')}</span></div>
                         <div class="total" style="margin-top:8px;">TOTAL: R$ ${venda.total.toFixed(2).replace('.', ',')}</div>
-                        <p class="agradecimento">Obrigado pela preferência!</p>
+                        <p style="text-align:center;margin-top:16px;font-size:11px;">Obrigado pela preferência!</p>
                         <button class="btn-imprimir" onclick="window.print()">🖨️ Imprimir Comprovante</button>
                     </div>
                 `;
@@ -427,6 +427,7 @@
                 saveData(data); 
                 showToast(`Venda #${venda.id} finalizada! Total: R$ ${totalFinal.toFixed(2).replace('.',',')}`);
                 mostrarComprovante(venda.id);
+                
                 const hoje = new Date().toLocaleDateString('pt-BR'), vHoje=data.vendas.filter(v=>new Date(v.data).toLocaleDateString('pt-BR')===hoje);
                 document.getElementById('pdvUltimasVendas').innerHTML = `<span>Hoje:</span> ${vHoje.length} vendas · R$ ${vHoje.reduce((s,v)=>s+v.total,0).toFixed(2).replace('.',',')}`;
                 document.getElementById('pdvPixInfo').style.display='none';
@@ -468,7 +469,7 @@
 
             // Relatórios
             function atualizarRelatorios(){ const d=getData(); const v=d.vendas; document.getElementById('relTotalVendas').textContent=v.length; const fat=v.reduce((s,x)=>s+x.total,0); document.getElementById('relFaturamento').textContent='R$ '+fat.toFixed(2).replace('.',','); document.getElementById('relLucroTotal').textContent='R$ '+v.reduce((s,x)=>s+x.itens.reduce((si,i)=>si+(i.preco-i.custo)*i.qtd,0)-x.desconto,0).toFixed(2).replace('.',','); document.getElementById('relTicketMedio').textContent='R$ '+(v.length?fat/v.length:0).toFixed(2).replace('.',','); document.getElementById('tabelaRelatorios').innerHTML = v.length ? [...v].reverse().map(v=>{ const cliente = v.clienteId ? (d.clientes.find(c=>c.id===v.clienteId)?.nome||'—') : 'Avulso'; return `<tr><td>${new Date(v.data).toLocaleDateString('pt-BR')}</td><td>${cliente}</td><td>${v.itens.map(i=>`${i.nome}(${i.qtd})`).join(', ')}</td><td>R$ ${v.total.toFixed(2)}</td></tr>`; }).join('') : '<tr><td colspan="4">Nenhum dado</td></tr>'; }
-            function exportarRelatorioPDF(){ const d=getData(); const v=d.vendas; let html=`<div style="font-family:Arial;color:black;padding:20px;max-width:800px;margin:0 auto;"><h1 style="color:black;">📋 Relatório PrintPocket 3D</h1><p style="color:black;">${new Date().toLocaleDateString('pt-BR')}</p><table style="width:100%;border-collapse:collapse;"><thead><tr style="background:#f0f0f0;"><th style="color:black;">Data</th><th style="color:black;">Cliente</th><th style="color:black;">Itens</th><th style="color:black;">Total</th></tr></thead><tbody>${v.length?v.map(v=>{const cliente=v.clienteId?(d.clientes.find(c=>c.id===v.clienteId)?.nome||'—'):'Avulso';return`<tr><td style="color:black;">${new Date(v.data).toLocaleDateString('pt-BR')}</td><td style="color:black;">${cliente}</td><td style="color:black;">${v.itens.map(i=>`${i.nome}(${i.qtd})`).join(', ')}</td><td style="color:black;">R$ ${v.total.toFixed(2)}</td></tr>`;}).join(''):'<tr><td colspan="4" style="color:black;">Nenhuma venda</td></tr>'}</tbody></table></div>`; const div=document.getElementById('pdfRelatorio'); div.innerHTML=html; div.style.display='block'; window.print(); setTimeout(()=>div.style.display='none',500); }
+            function exportarRelatorioPDF(){ const d=getData(); const v=d.vendas; const fat=v.reduce((s,x)=>s+x.total,0); let html=`<div style="font-family:Arial;color:black;padding:20px;max-width:800px;margin:0 auto;"><h1>📋 Relatório PrintPocket 3D</h1><p>${new Date().toLocaleDateString('pt-BR')}</p><table style="width:100%;border-collapse:collapse;"><thead><tr><th>Data</th><th>Cliente</th><th>Itens</th><th>Total</th></tr></thead><tbody>${v.length?v.map(v=>{const cliente=v.clienteId?(d.clientes.find(c=>c.id===v.clienteId)?.nome||'—'):'Avulso';return`<tr><td>${new Date(v.data).toLocaleDateString('pt-BR')}</td><td>${cliente}</td><td>${v.itens.map(i=>`${i.nome}(${i.qtd})`).join(', ')}</td><td>R$ ${v.total.toFixed(2)}</td></tr>`;}).join(''):'<tr><td colspan="4">Nenhuma venda</td></tr>'}</tbody></table></div>`; const div=document.getElementById('pdfRelatorio'); div.innerHTML=html; div.style.display='block'; window.print(); setTimeout(()=>div.style.display='none',500); }
             function exportarBackup(){ const d=getData(); const b=new Blob([JSON.stringify(d,null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='printpocket_backup_'+new Date().toISOString().slice(0,10)+'.json'; a.click(); }
             function importarBackup(){ const i=document.createElement('input'); i.type='file'; i.accept='.json'; i.onchange=e=>{ const f=e.target.files[0]; if(!f)return; const r=new FileReader(); r.onload=ev=>{ try{ const data=JSON.parse(ev.target.result); if(data.produtos&&data.vendas&&data.estoque!==undefined){ saveData(data); showToast('Restaurado!'); setTimeout(()=>location.reload(),1500); } }catch(ex){ showToast('Erro','error'); } }; r.readAsText(f); }; i.click(); }
 

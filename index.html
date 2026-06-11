@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PrintPocket 3D | PDV + Clientes + Comprovante</title>
+    <title>PrintPocket 3D | PDV</title>
     <style>
         :root {
             --bg-primary: #0d1117;
@@ -115,18 +115,29 @@
         .pix-info .pix-chave { font-size: 13px; font-weight: 600; color: var(--accent-green); }
         .pix-info .pix-valor { font-size: 16px; font-weight: 700; color: var(--accent-cyan); }
 
+        /* Comprovante */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; display: flex; align-items: center; justify-content: center; }
-        .comprovante { background: white; color: black; padding: 30px; border-radius: var(--radius); max-width: 500px; width: 90%; font-family: 'Courier New', monospace; box-shadow: 0 8px 32px rgba(0,0,0,0.5); position: relative; max-height: 90vh; overflow-y: auto; }
-        .comprovante h2 { text-align: center; margin-bottom: 20px; color: #0d1117; font-size: 20px; }
+        .comprovante { background: white; color: #000000; padding: 30px; border-radius: var(--radius); max-width: 500px; width: 90%; font-family: 'Courier New', monospace; box-shadow: 0 8px 32px rgba(0,0,0,0.5); position: relative; max-height: 90vh; overflow-y: auto; }
+        .comprovante * { color: #000000 !important; }
+        .comprovante h2 { text-align: center; margin-bottom: 20px; font-size: 20px; }
         .comprovante .linha { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 13px; }
-        .comprovante .linha strong { color: #333; }
+        .comprovante .linha strong { color: #000000; }
         .comprovante .divisor { border-top: 1px dashed #999; margin: 10px 0; }
         .comprovante .total { font-size: 20px; font-weight: bold; text-align: right; }
-        .comprovante .btn-fechar { position: absolute; top: 10px; right: 10px; background: none; border: none; font-size: 20px; cursor: pointer; color: #999; }
-        .comprovante .btn-imprimir { display: block; margin: 20px auto 0; padding: 10px 30px; background: #00e5ff; color: black; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 14px; }
+        .comprovante .btn-fechar { position: absolute; top: 10px; right: 10px; background: none; border: none; font-size: 20px; cursor: pointer; color: #999 !important; }
+        .comprovante .btn-imprimir { display: block; margin: 20px auto 0; padding: 10px 30px; background: #00e5ff; color: #000000 !important; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 14px; }
         .comprovante table { width: 100%; border-collapse: collapse; margin: 10px 0; }
         .comprovante th { background: #f0f0f0; padding: 6px 8px; text-align: left; font-size: 11px; border-bottom: 2px solid #999; }
         .comprovante td { padding: 6px 8px; border-bottom: 1px solid #ddd; font-size: 12px; }
+        .comprovante .obs { text-align: center; margin-top: 16px; font-size: 11px; color: #666 !important; }
+
+        @media print {
+            body * { visibility: hidden; }
+            .modal-overlay, .modal-overlay * { visibility: visible; }
+            .modal-overlay { position: absolute; left: 0; top: 0; width: 100%; background: white; }
+            .comprovante { box-shadow: none; border-radius: 0; max-width: 100%; }
+            .btn-fechar, .btn-imprimir { display: none; }
+        }
 
         @media (max-width: 768px) {
             .sidebar { width: 60px; min-width: 60px; padding: 12px 6px; }
@@ -153,7 +164,7 @@
         <button class="nav-btn" data-page="vendas"><span class="nav-icon">💰</span> Vendas</button>
         <button class="nav-btn" data-page="relatorios"><span class="nav-icon">📋</span> Relatórios</button>
         <div class="sidebar-footer">
-            PrintPocket 3D © 2026<br>v2.8
+            PrintPocket 3D © 2026<br>v2.9
             <div class="save-indicator" id="saveIndicator">💾 Salvo automático</div>
         </div>
     </aside>
@@ -246,7 +257,6 @@
             function saveData(data) { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); document.getElementById('saveIndicator').textContent = '💾 Salvo ' + new Date().toLocaleTimeString(); }
 
             let carrinhoPDV = [];
-            let comprovanteJaMostrado = false; // Flag para evitar duplicidade
 
             function mostrarInfoPixPDV() {
                 const pag = document.getElementById('pdvPagamento')?.value;
@@ -268,7 +278,7 @@
             }
 
             function mostrarComprovante(vendaId) {
-                // Remove qualquer overlay existente primeiro
+                // Remove qualquer overlay existente
                 const oldOverlay = document.getElementById('comprovanteOverlay');
                 if (oldOverlay) oldOverlay.remove();
                 
@@ -279,19 +289,17 @@
                 const cliente = venda.clienteId ? data.clientes.find(c => c.id === venda.clienteId) : null;
                 const clienteNome = cliente ? cliente.nome : 'Avulso';
                 const totalItens = venda.itens.reduce((s, i) => s + i.qtd, 0);
+                const fatorDesconto = venda.subtotal > 0 ? venda.desconto / venda.subtotal : 0;
                 
                 const overlay = document.createElement('div');
                 overlay.className = 'modal-overlay';
                 overlay.id = 'comprovanteOverlay';
                 
-                // Calcula desconto proporcional por item
-                const fatorDesconto = venda.subtotal > 0 ? venda.desconto / venda.subtotal : 0;
-                
                 overlay.innerHTML = `
-                    <div class="comprovante">
+                    <div class="comprovante" id="comprovanteImpressao">
                         <button class="btn-fechar" onclick="document.getElementById('comprovanteOverlay').remove()">✕</button>
                         <h2>PrintPocket 3D</h2>
-                        <p style="text-align:center;font-size:12px;margin-bottom:16px;color:#666;">Comprovante de Venda</p>
+                        <p style="text-align:center;font-size:12px;margin-bottom:16px;">Comprovante de Venda</p>
                         <div class="linha"><span>Data:</span><strong>${new Date(venda.data).toLocaleString('pt-BR')}</strong></div>
                         <div class="linha"><span>Venda Nº:</span><strong>${venda.id}</strong></div>
                         <div class="linha"><span>Cliente:</span><strong>${clienteNome}</strong></div>
@@ -299,26 +307,12 @@
                         ${venda.pagamento === 'Pix' ? `<div class="linha"><span>Chave Pix:</span><strong>${PIX_KEY}</strong></div>` : ''}
                         <div class="divisor"></div>
                         <table>
-                            <thead>
-                                <tr>
-                                    <th>Item</th>
-                                    <th>Qtd</th>
-                                    <th>Unit.</th>
-                                    <th>Total</th>
-                                </tr>
-                            </thead>
+                            <thead><tr><th>Item</th><th>Qtd</th><th>Unit.</th><th>Total</th></tr></thead>
                             <tbody>
                                 ${venda.itens.map(i => {
                                     const descItem = i.preco * i.qtd * fatorDesconto;
                                     const totalItem = i.preco * i.qtd - descItem;
-                                    return `
-                                        <tr>
-                                            <td>${i.nome}</td>
-                                            <td>${i.qtd}</td>
-                                            <td>R$ ${i.preco.toFixed(2).replace('.', ',')}</td>
-                                            <td>R$ ${totalItem.toFixed(2).replace('.', ',')}</td>
-                                        </tr>
-                                    `;
+                                    return `<tr><td>${i.nome}</td><td>${i.qtd}</td><td>R$ ${i.preco.toFixed(2).replace('.', ',')}</td><td>R$ ${totalItem.toFixed(2).replace('.', ',')}</td></tr>`;
                                 }).join('')}
                             </tbody>
                         </table>
@@ -327,19 +321,17 @@
                         <div class="linha"><span>Subtotal:</span><span>R$ ${venda.subtotal.toFixed(2).replace('.', ',')}</span></div>
                         <div class="linha"><span>Desconto:</span><span>R$ ${venda.desconto.toFixed(2).replace('.', ',')}</span></div>
                         <div class="total" style="margin-top:8px;">TOTAL: R$ ${venda.total.toFixed(2).replace('.', ',')}</div>
-                        <p style="text-align:center;margin-top:16px;font-size:11px;color:#666;">Obrigado pela preferência!</p>
-                        <button class="btn-imprimir" onclick="window.print()">🖨️ Imprimir Comprovante</button>
+                        <p class="obs">Obrigado pela preferência!</p>
+                        <button class="btn-imprimir" onclick="imprimirComprovante()">🖨️ Imprimir Comprovante</button>
                     </div>
                 `;
                 
                 document.body.appendChild(overlay);
-                
-                // Fecha ao clicar fora do comprovante
-                overlay.addEventListener('click', function(e) {
-                    if (e.target === overlay) overlay.remove();
-                });
-                
-                comprovanteJaMostrado = true;
+                overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
+            }
+
+            function imprimirComprovante() {
+                window.print();
             }
 
             const navBtns = document.querySelectorAll('.nav-btn');
@@ -446,10 +438,7 @@
                 data.vendas.push(venda);
                 saveData(data); 
                 showToast(`Venda #${venda.id} finalizada! Total: R$ ${totalFinal.toFixed(2).replace('.',',')}`);
-                
-                // Mostra o comprovante (apenas 1 vez)
-                setTimeout(() => mostrarComprovante(venda.id), 100);
-                
+                mostrarComprovante(venda.id);
                 const hoje = new Date().toLocaleDateString('pt-BR'), vHoje=data.vendas.filter(v=>new Date(v.data).toLocaleDateString('pt-BR')===hoje);
                 document.getElementById('pdvUltimasVendas').innerHTML = `<span>Hoje:</span> ${vHoje.length} vendas · R$ ${vHoje.reduce((s,v)=>s+v.total,0).toFixed(2).replace('.',',')}`;
                 document.getElementById('pdvPixInfo').style.display='none';
@@ -485,7 +474,7 @@
             function abrirFormVenda(){ document.getElementById('vendaEditId').value=''; document.getElementById('formVendaTitulo').textContent='Nova Venda'; preencherSelectVenda(); preencherSelectClienteVenda(); document.getElementById('formVenda').style.display='block'; document.getElementById('vendaQtd').value='1'; document.getElementById('vendaDesconto').value='0'; document.getElementById('vendaPagamentoSelect').value='Dinheiro'; atualizarPreviewVenda(); }
             function fecharFormVenda(){ document.getElementById('formVenda').style.display='none'; }
             function salvarVenda(){ return registrarVendaSimples(); }
-            function registrarVendaSimples(){ const d=getData(); const pid=parseInt(document.getElementById('vendaProdutoSelect').value), q=parseInt(document.getElementById('vendaQtd').value)||0, desc=parseFloat(document.getElementById('vendaDesconto').value)||0, clienteId=document.getElementById('vendaClienteSelect').value?parseInt(document.getElementById('vendaClienteSelect').value):null, pag=document.getElementById('vendaPagamentoSelect').value||'Dinheiro'; if(!pid||q<=0){ showToast('Preencha corretamente','error'); return; } const prod=d.produtos.find(p=>p.id===pid); if(!prod)return; if((d.estoque[pid]||0)<q){ showToast('Estoque insuficiente','error'); return; } const total=Math.max(0,prod.preco*q-desc); d.estoque[pid]-=q; d.movimentacoes.push({produtoId:pid,tipo:'saida',qtd:q,data:new Date().toISOString(),motivo:'venda'}); const venda = {id:d.nextId++,data:new Date().toISOString(),clienteId,itens:[{produtoId:pid,nome:prod.nome,preco:prod.preco,custo:prod.custo,qtd:q}],subtotal:prod.preco*q,desconto:desc,total:parseFloat(total.toFixed(2)),pagamento:pag}; d.vendas.push(venda); saveData(d); fecharFormVenda(); renderTabelaVendas(); renderTabelaEstoque(); showToast(`Venda #${venda.id}: R$ ${total.toFixed(2)}`); setTimeout(() => mostrarComprovante(venda.id), 100); }
+            function registrarVendaSimples(){ const d=getData(); const pid=parseInt(document.getElementById('vendaProdutoSelect').value), q=parseInt(document.getElementById('vendaQtd').value)||0, desc=parseFloat(document.getElementById('vendaDesconto').value)||0, clienteId=document.getElementById('vendaClienteSelect').value?parseInt(document.getElementById('vendaClienteSelect').value):null, pag=document.getElementById('vendaPagamentoSelect').value||'Dinheiro'; if(!pid||q<=0){ showToast('Preencha corretamente','error'); return; } const prod=d.produtos.find(p=>p.id===pid); if(!prod)return; if((d.estoque[pid]||0)<q){ showToast('Estoque insuficiente','error'); return; } const total=Math.max(0,prod.preco*q-desc); d.estoque[pid]-=q; d.movimentacoes.push({produtoId:pid,tipo:'saida',qtd:q,data:new Date().toISOString(),motivo:'venda'}); const venda = {id:d.nextId++,data:new Date().toISOString(),clienteId,itens:[{produtoId:pid,nome:prod.nome,preco:prod.preco,custo:prod.custo,qtd:q}],subtotal:prod.preco*q,desconto:desc,total:parseFloat(total.toFixed(2)),pagamento:pag}; d.vendas.push(venda); saveData(d); fecharFormVenda(); renderTabelaVendas(); renderTabelaEstoque(); showToast(`Venda #${venda.id}: R$ ${total.toFixed(2)}`); mostrarComprovante(venda.id); }
             function excluirVenda(id){ if(!confirm('Excluir venda? Estoque será restaurado.'))return; const d=getData(); const v=d.vendas.find(v=>v.id===id); if(v){ v.itens.forEach(i=>{ d.estoque[i.produtoId]=(d.estoque[i.produtoId]||0)+i.qtd; }); d.vendas=d.vendas.filter(v=>v.id!==id); saveData(d); renderTabelaVendas(); renderTabelaEstoque(); showToast('Venda excluída.'); } }
             function renderTabelaVendas(){ const d=getData(); document.getElementById('tabelaVendas').innerHTML = d.vendas.length ? [...d.vendas].reverse().map(v=>{ const cliente = v.clienteId ? (d.clientes.find(c=>c.id===v.clienteId)?.nome||'—') : 'Avulso'; return `<tr><td>${new Date(v.data).toLocaleDateString('pt-BR')}</td><td>${cliente}</td><td>${v.itens.map(i=>`${i.nome}(${i.qtd})`).join(', ')}</td><td>R$ ${v.total.toFixed(2)}</td><td><button class="btn btn-secondary btn-sm" onclick="mostrarComprovante(${v.id})">🧾</button> <button class="btn btn-danger btn-sm" onclick="excluirVenda(${v.id})">🗑️</button></td></tr>`; }).join('') : '<tr><td colspan="5">Nenhuma venda</td></tr>'; }
 
@@ -525,7 +514,7 @@
             window.abrirFormCliente=abrirFormCliente; window.fecharFormCliente=fecharFormCliente; window.salvarCliente=salvarCliente; window.editarCliente=editarCliente; window.excluirCliente=excluirCliente; window.verHistoricoCliente=verHistoricoCliente;
             window.adicionarAoCarrinhoPDV=adicionarAoCarrinhoPDV; window.removerDoCarrinhoPDV=removerDoCarrinhoPDV; window.alterarQtdPDV=alterarQtdPDV; window.limparCarrinhoPDV=limparCarrinhoPDV; window.finalizarVendaPDV=finalizarVendaPDV;
             window.calcularCusto=calcularCusto; window.exportarRelatorioPDF=exportarRelatorioPDF; window.exportarBackup=exportarBackup; window.importarBackup=importarBackup;
-            window.mostrarInfoPixPDV=mostrarInfoPixPDV; window.copiarChavePix=copiarChavePix; window.mostrarComprovante=mostrarComprovante;
+            window.mostrarInfoPixPDV=mostrarInfoPixPDV; window.copiarChavePix=copiarChavePix; window.mostrarComprovante=mostrarComprovante; window.imprimirComprovante=imprimirComprovante;
             init();
         })();
     </script>

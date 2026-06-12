@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PrintPocket 3D | PDV</title>
+    <title>PrintPocket 3D | PDV + Controle Financeiro</title>
     <style>
         :root {
             --bg-primary: #0d1117;
@@ -31,7 +31,6 @@
         .sidebar-logo { display: flex; align-items: center; gap: 12px; padding: 10px 8px 20px; border-bottom: 1px solid var(--border); margin-bottom: 4px; }
         .sidebar-logo .logo-icon { width: 44px; height: 44px; background: var(--gradient-1); border: 2px solid var(--accent-cyan); border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; font-size: 22px; color: var(--accent-cyan); }
         .sidebar-logo .logo-text h2 { font-size: 16px; font-weight: 700; color: var(--text-primary); }
-        .sidebar-logo .logo-text span { font-size: 10px; color: var(--accent-cyan); letter-spacing: 2px; text-transform: uppercase; }
         .nav-btn { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: var(--radius-sm); background: transparent; border: none; color: var(--text-secondary); cursor: pointer; font-size: 13px; font-weight: 500; transition: var(--transition); text-align: left; width: 100%; font-family: inherit; }
         .nav-btn:hover { background: #1e293b; color: var(--text-primary); }
         .nav-btn.active { background: #1a2940; color: var(--accent-cyan); font-weight: 600; box-shadow: inset 3px 0 0 var(--accent-cyan); }
@@ -56,7 +55,6 @@
         .btn { padding: 10px 18px; border-radius: var(--radius-sm); border: none; cursor: pointer; font-weight: 600; font-size: 13px; transition: var(--transition); font-family: inherit; display: inline-flex; align-items: center; gap: 6px; }
         .btn-primary { background: var(--accent-cyan); color: #000; } .btn-primary:hover { background: #00d4ee; }
         .btn-orange { background: var(--accent-orange); color: #fff; } .btn-orange:hover { background: #ff8a65; }
-        .btn-green { background: var(--accent-green); color: #000; } .btn-green:hover { background: #00e676cc; }
         .btn-secondary { background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border); } .btn-secondary:hover { border-color: var(--accent-cyan); }
         .btn-danger { background: var(--accent-red); color: #fff; } .btn-danger:hover { background: #e02d3d; }
         .btn-sm { padding: 6px 12px; font-size: 11px; } .btn-lg { padding: 14px 24px; font-size: 15px; }
@@ -159,24 +157,24 @@
             <div class="logo-icon">🖨️</div>
             <div class="logo-text"><h2>PrintPocket 3D</h2></div>
         </div>
+        <button class="nav-btn pdv-btn active" data-page="pdv"><span class="nav-icon">🛒</span> PDV</button>
         <button class="nav-btn" data-page="calculadora"><span class="nav-icon">🧮</span> Calculadora</button>
         <button class="nav-btn" data-page="clientes"><span class="nav-icon">👥</span> Clientes</button>
         <button class="nav-btn" data-page="empresa"><span class="nav-icon">🏢</span> Empresa</button>
         <button class="nav-btn" data-page="estoque"><span class="nav-icon">🏗️</span> Estoque</button>
-        <button class="nav-btn pdv-btn active" data-page="pdv"><span class="nav-icon">🛒</span> PDV</button>
         <button class="nav-btn" data-page="produtos"><span class="nav-icon">📦</span> Produtos</button>
         <button class="nav-btn" data-page="relatorios"><span class="nav-icon">📋</span> Relatórios</button>
         <button class="nav-btn" data-page="vendas"><span class="nav-icon">💰</span> Vendas</button>
         <div class="sidebar-footer">
-            PrintPocket 3D © 2026<br>v3.2
+            PrintPocket 3D © 2026<br>v3.3
             <div class="save-indicator" id="saveIndicator">💾 Salvo automático</div>
         </div>
     </aside>
 
     <main class="main">
-        <!-- PDV -->
+        <!-- PDV (TELA INICIAL) -->
         <div class="page active" id="page-pdv">
-            <div class="page-header"><div><h1>🛒 PDV</h1><p style="color:var(--text-secondary);">Venda rápida</p></div><button class="btn btn-secondary btn-sm" onclick="limparCarrinhoPDV()">🗑️ Limpar</button></div>
+            <div class="page-header"><div><h1>🛒 PDV</h1><p style="color:var(--text-secondary);">Registro rápido de vendas</p></div><button class="btn btn-secondary btn-sm" onclick="limparCarrinhoPDV()">🗑️ Limpar</button></div>
             <div class="pdv-layout">
                 <div class="pdv-produtos">
                     <div class="pdv-search"><input type="text" id="pdvBusca" placeholder="🔍 Buscar produto..." oninput="renderPDVProdutos()"></div>
@@ -264,10 +262,9 @@
             <div class="table-container" style="margin-top:16px;"><table><thead><tr><th>Data</th><th>Cliente</th><th>Itens</th><th>Total</th></tr></thead><tbody id="tabelaRelatorios"></tbody></table></div>
         </div>
 
-        <!-- Vendas -->
+        <!-- Vendas (apenas consulta) -->
         <div class="page" id="page-vendas">
-            <div class="page-header"><div><h1>💰 Vendas</h1></div><button class="btn btn-primary" onclick="abrirFormVenda()">+ Nova</button></div>
-            <div id="formVenda" class="form-card" style="display:none;"><h3 id="formVendaTitulo">Nova Venda</h3><input type="hidden" id="vendaEditId"><div class="form-row"><div class="form-group"><label>Produto</label><select id="vendaProdutoSelect"></select></div><div class="form-group"><label>Qtd</label><input type="number" id="vendaQtd" min="1" value="1"></div><div class="form-group"><label>Desconto (R$)</label><input type="number" id="vendaDesconto" value="0" step="0.01"></div></div><div class="form-row"><div class="form-group"><label>Cliente</label><select id="vendaClienteSelect"><option value="">Avulso</option></select></div><div class="form-group"><label>Pagamento</label><select id="vendaPagamentoSelect"><option>Dinheiro</option><option>Cartão de Crédito</option><option>Cartão de Débito</option><option>Pix</option></select></div></div><div id="vendaPreview" style="margin:10px 0;color:var(--accent-cyan);font-weight:600;"></div><button class="btn btn-primary" onclick="salvarVenda()">✅ Confirmar</button><button class="btn btn-secondary" onclick="fecharFormVenda()" style="margin-left:8px;">Cancelar</button></div>
+            <div class="page-header"><div><h1>💰 Controle Financeiro</h1><p style="color:var(--text-secondary);">Histórico completo de vendas realizadas no PDV</p></div></div>
             <div class="table-container"><table><thead><tr><th>Data</th><th>Cliente</th><th>Itens</th><th>Total</th><th>Ações</th></tr></thead><tbody id="tabelaVendas"></tbody></table></div>
         </div>
     </main>
@@ -445,7 +442,7 @@
                 if (p === 'estoque') { renderTabelaEstoque(); preencherSelectEstoque(); }
                 if (p === 'clientes') renderTabelaClientes();
                 if (p === 'empresa') carregarEmpresaForm();
-                if (p === 'vendas') { preencherSelectVenda(); preencherSelectClienteVenda(); renderTabelaVendas(); }
+                if (p === 'vendas') { renderTabelaVendas(); }
                 if (p === 'relatorios') atualizarRelatorios();
                 if (p === 'calculadora') calcularCusto();
             }));
@@ -473,7 +470,7 @@
                 if (!nome) { showToast('Nome obrigatório','error'); return; }
                 if (editId) { const i = data.clientes.findIndex(c=>c.id===parseInt(editId)); if(i>=0) data.clientes[i] = {...data.clientes[i], nome, telefone, email}; }
                 else data.clientes.push({ id: data.nextId++, nome, telefone, email });
-                saveData(data); fecharFormCliente(); renderTabelaClientes(); preencherSelectClientePDV(); preencherSelectClienteVenda(); showToast('Cliente salvo!');
+                saveData(data); fecharFormCliente(); renderTabelaClientes(); preencherSelectClientePDV(); showToast('Cliente salvo!');
             }
             function editarCliente(id) {
                 const data = getData(); const c = data.clientes.find(cl=>cl.id===id); if(!c)return;
@@ -481,7 +478,7 @@
                 document.getElementById('clienteEditId').value=c.id; document.getElementById('clienteNome').value=c.nome;
                 document.getElementById('clienteTelefone').value=c.telefone||''; document.getElementById('clienteEmail').value=c.email||'';
             }
-            function excluirCliente(id) { if(!confirm('Excluir cliente?'))return; const data=getData(); data.clientes=data.clientes.filter(c=>c.id!==id); saveData(data); renderTabelaClientes(); preencherSelectClientePDV(); preencherSelectClienteVenda(); showToast('Cliente excluído.'); }
+            function excluirCliente(id) { if(!confirm('Excluir cliente?'))return; const data=getData(); data.clientes=data.clientes.filter(c=>c.id!==id); saveData(data); renderTabelaClientes(); preencherSelectClientePDV(); showToast('Cliente excluído.'); }
             function verHistoricoCliente(id) {
                 const data = getData(); const cliente = data.clientes.find(c=>c.id===id); if(!cliente)return;
                 document.getElementById('clienteHistoricoNome').textContent = cliente.nome;
@@ -490,7 +487,6 @@
                 document.getElementById('clienteHistorico').style.display='block';
             }
             function preencherSelectClientePDV() { document.getElementById('pdvCliente').innerHTML = '<option value="">Avulso</option>' + getData().clientes.map(c=>`<option value="${c.id}">${c.nome}</option>`).join(''); }
-            function preencherSelectClienteVenda() { document.getElementById('vendaClienteSelect').innerHTML = '<option value="">Avulso</option>' + getData().clientes.map(c=>`<option value="${c.id}">${c.nome}</option>`).join(''); }
 
             // PDV
             function renderPDVProdutos() {
@@ -568,13 +564,7 @@
             function fecharFormEstoque(){ document.getElementById('formEstoque').style.display='none'; }
             function salvarMovimentacao(){ const d=getData(); const pid=parseInt(document.getElementById('estoqueProdutoSelect').value), tp=document.getElementById('estoqueTipo').value, q=parseInt(document.getElementById('estoqueQtd').value)||0; if(!pid||q<=0){ showToast('Preencha corretamente','error'); return; } if(tp==='saida'&&(d.estoque[pid]||0)<q){ showToast('Saldo insuficiente','error'); return; } d.estoque[pid]=(d.estoque[pid]||0)+(tp==='entrada'?q:-q); d.movimentacoes.push({produtoId:pid,tipo:tp,qtd:q,data:new Date().toISOString()}); saveData(d); fecharFormEstoque(); renderTabelaEstoque(); showToast('Movimentação registrada!'); }
 
-            // Vendas
-            function preencherSelectVenda(){ document.getElementById('vendaProdutoSelect').innerHTML = getData().produtos.map(p=>`<option value="${p.id}" data-preco="${p.preco}" data-custo="${p.custo}">${p.nome} — R$ ${p.preco.toFixed(2)}</option>`).join('')||'<option value="">—</option>'; atualizarPreviewVenda(); }
-            function atualizarPreviewVenda(){ const sel=document.getElementById('vendaProdutoSelect'); const q=parseInt(document.getElementById('vendaQtd').value)||0, desc=parseFloat(document.getElementById('vendaDesconto').value)||0; const opt=sel?.selectedOptions[0]; document.getElementById('vendaPreview').textContent = opt&&opt.dataset.preco ? `Total: R$ ${Math.max(0,parseFloat(opt.dataset.preco)*q-desc).toFixed(2).replace('.',',')}` : ''; }
-            function abrirFormVenda(){ document.getElementById('vendaEditId').value=''; document.getElementById('formVendaTitulo').textContent='Nova Venda'; preencherSelectVenda(); preencherSelectClienteVenda(); document.getElementById('formVenda').style.display='block'; document.getElementById('vendaQtd').value='1'; document.getElementById('vendaDesconto').value='0'; document.getElementById('vendaPagamentoSelect').value='Dinheiro'; atualizarPreviewVenda(); }
-            function fecharFormVenda(){ document.getElementById('formVenda').style.display='none'; }
-            function salvarVenda(){ return registrarVendaSimples(); }
-            function registrarVendaSimples(){ const d=getData(); const pid=parseInt(document.getElementById('vendaProdutoSelect').value), q=parseInt(document.getElementById('vendaQtd').value)||0, desc=parseFloat(document.getElementById('vendaDesconto').value)||0, clienteId=document.getElementById('vendaClienteSelect').value?parseInt(document.getElementById('vendaClienteSelect').value):null, pag=document.getElementById('vendaPagamentoSelect').value||'Dinheiro'; if(!pid||q<=0){ showToast('Preencha corretamente','error'); return; } const prod=d.produtos.find(p=>p.id===pid); if(!prod)return; if((d.estoque[pid]||0)<q){ showToast('Estoque insuficiente','error'); return; } const total=Math.max(0,prod.preco*q-desc); d.estoque[pid]-=q; d.movimentacoes.push({produtoId:pid,tipo:'saida',qtd:q,data:new Date().toISOString(),motivo:'venda'}); const venda = {id:d.nextId++,data:new Date().toISOString(),clienteId,itens:[{produtoId:pid,nome:prod.nome,preco:prod.preco,custo:prod.custo,qtd:q}],subtotal:prod.preco*q,desconto:desc,total:parseFloat(total.toFixed(2)),pagamento:pag}; d.vendas.push(venda); saveData(d); fecharFormVenda(); renderTabelaVendas(); renderTabelaEstoque(); showToast(`Venda: R$ ${total.toFixed(2)}`); mostrarNotaFiscal(venda.id); }
+            // Vendas (apenas consulta)
             function excluirVenda(id){ if(!confirm('Excluir venda? Estoque será restaurado.'))return; const d=getData(); const v=d.vendas.find(v=>v.id===id); if(v){ v.itens.forEach(i=>{ d.estoque[i.produtoId]=(d.estoque[i.produtoId]||0)+i.qtd; }); d.vendas=d.vendas.filter(v=>v.id!==id); saveData(d); renderTabelaVendas(); renderTabelaEstoque(); showToast('Venda excluída.'); } }
             function renderTabelaVendas(){ const d=getData(); document.getElementById('tabelaVendas').innerHTML = d.vendas.length ? [...d.vendas].reverse().map(v=>{ const cliente = v.clienteId ? (d.clientes.find(c=>c.id===v.clienteId)?.nome||'—') : 'Avulso'; return `<tr><td>${new Date(v.data).toLocaleDateString('pt-BR')}</td><td>${cliente}</td><td>${v.itens.map(i=>`${i.nome}(${i.qtd})`).join(', ')}</td><td>R$ ${v.total.toFixed(2)}</td><td><button class="btn btn-secondary btn-sm" onclick="mostrarNotaFiscal(${v.id})">🧾</button> <button class="btn btn-danger btn-sm" onclick="excluirVenda(${v.id})">🗑️</button></td></tr>`; }).join('') : '<tr><td colspan="5">Nenhuma venda</td></tr>'; }
 
@@ -584,9 +574,6 @@
             function exportarBackup(){ const d=getData(); const b=new Blob([JSON.stringify(d,null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='printpocket_backup_'+new Date().toISOString().slice(0,10)+'.json'; a.click(); }
             function importarBackup(){ const i=document.createElement('input'); i.type='file'; i.accept='.json'; i.onchange=e=>{ const f=e.target.files[0]; if(!f)return; const r=new FileReader(); r.onload=ev=>{ try{ const data=JSON.parse(ev.target.result); if(data.produtos&&data.vendas&&data.estoque!==undefined){ saveData(data); showToast('Restaurado!'); setTimeout(()=>location.reload(),1500); } }catch(ex){ showToast('Erro','error'); } }; r.readAsText(f); }; i.click(); }
 
-            document.getElementById('vendaQtd')?.addEventListener('input', atualizarPreviewVenda);
-            document.getElementById('vendaDesconto')?.addEventListener('input', atualizarPreviewVenda);
-            document.getElementById('vendaProdutoSelect')?.addEventListener('change', atualizarPreviewVenda);
             document.getElementById('pdvDesconto')?.addEventListener('input', ()=>{ atualizarTotaisPDV(); mostrarInfoPixPDV(); });
             ['calcPesoGrama','calcPrecoKg','calcTempoHora','calcCustoKwh','calcPotenciaW','calcMargemLucro','calcCustoAdicional'].forEach(id=>document.getElementById(id)?.addEventListener('input',calcularCusto));
             document.getElementById('calcTipoFilamento')?.addEventListener('change',calcularCusto);
@@ -601,7 +588,7 @@
                     data.nextId = 4; saveData(data);
                 }
                 renderTabelaProdutos(); renderTabelaEstoque(); renderTabelaClientes(); renderTabelaVendas(); atualizarRelatorios(); calcularCusto();
-                preencherSelectEstoque(); preencherSelectVenda(); preencherSelectClientePDV(); preencherSelectClienteVenda();
+                preencherSelectEstoque(); preencherSelectClientePDV();
                 const hoje = new Date().toLocaleDateString('pt-BR'), vHoje = data.vendas.filter(v=>new Date(v.data).toLocaleDateString('pt-BR')===hoje);
                 document.getElementById('pdvUltimasVendas').innerHTML = `<span>Hoje:</span> ${vHoje.length} vendas · R$ ${vHoje.reduce((s,v)=>s+v.total,0).toFixed(2).replace('.',',')}`;
                 renderPDVProdutos(); renderCarrinhoPDV(); atualizarTotaisPDV();
@@ -609,11 +596,10 @@
 
             window.editarProduto=editarProduto; window.excluirProduto=excluirProduto; window.abrirFormProduto=abrirFormProduto; window.fecharFormProduto=fecharFormProduto; window.salvarProduto=salvarProduto;
             window.abrirFormEstoque=abrirFormEstoque; window.fecharFormEstoque=fecharFormEstoque; window.salvarMovimentacao=salvarMovimentacao;
-            window.abrirFormVenda=abrirFormVenda; window.fecharFormVenda=fecharFormVenda; window.salvarVenda=salvarVenda; window.excluirVenda=excluirVenda;
             window.abrirFormCliente=abrirFormCliente; window.fecharFormCliente=fecharFormCliente; window.salvarCliente=salvarCliente; window.editarCliente=editarCliente; window.excluirCliente=excluirCliente; window.verHistoricoCliente=verHistoricoCliente;
             window.adicionarAoCarrinhoPDV=adicionarAoCarrinhoPDV; window.removerDoCarrinhoPDV=removerDoCarrinhoPDV; window.alterarQtdPDV=alterarQtdPDV; window.limparCarrinhoPDV=limparCarrinhoPDV; window.finalizarVendaPDV=finalizarVendaPDV;
             window.calcularCusto=calcularCusto; window.exportarRelatorioPDF=exportarRelatorioPDF; window.exportarBackup=exportarBackup; window.importarBackup=importarBackup;
-            window.mostrarInfoPixPDV=mostrarInfoPixPDV; window.copiarChavePix=copiarChavePix;
+            window.mostrarInfoPixPDV=mostrarInfoPixPDV; window.copiarChavePix=copiarChavePix; window.excluirVenda=excluirVenda;
             window.mostrarNotaFiscal=mostrarNotaFiscal; window.fecharNotaFiscal=fecharNotaFiscal; window.gerarPDFNotaFiscal=gerarPDFNotaFiscal;
             window.salvarEmpresa=salvarEmpresa; window.carregarEmpresaForm=carregarEmpresaForm;
             init();

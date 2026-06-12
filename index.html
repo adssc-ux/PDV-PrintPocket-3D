@@ -27,12 +27,12 @@
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Segoe UI', 'Inter', system-ui, sans-serif; background: var(--bg-primary); color: var(--text-primary); display: flex; min-height: 100vh; overflow-x: hidden; }
-        .sidebar { width: 260px; min-width: 260px; background: var(--bg-sidebar); border-right: 1px solid var(--border); padding: 20px 16px; display: flex; flex-direction: column; gap: 6px; position: sticky; top: 0; height: 100vh; z-index: 10; box-shadow: var(--shadow); }
-        .sidebar-logo { display: flex; align-items: center; gap: 12px; padding: 10px 8px 20px; border-bottom: 1px solid var(--border); margin-bottom: 6px; }
+        .sidebar { width: 260px; min-width: 260px; background: var(--bg-sidebar); border-right: 1px solid var(--border); padding: 20px 16px; display: flex; flex-direction: column; gap: 4px; position: sticky; top: 0; height: 100vh; z-index: 10; box-shadow: var(--shadow); }
+        .sidebar-logo { display: flex; align-items: center; gap: 12px; padding: 10px 8px 20px; border-bottom: 1px solid var(--border); margin-bottom: 4px; }
         .sidebar-logo .logo-icon { width: 44px; height: 44px; background: var(--gradient-1); border: 2px solid var(--accent-cyan); border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; font-size: 22px; color: var(--accent-cyan); }
         .sidebar-logo .logo-text h2 { font-size: 16px; font-weight: 700; color: var(--text-primary); }
         .sidebar-logo .logo-text span { font-size: 10px; color: var(--accent-cyan); letter-spacing: 2px; text-transform: uppercase; }
-        .nav-btn { display: flex; align-items: center; gap: 10px; padding: 11px 14px; border-radius: var(--radius-sm); background: transparent; border: none; color: var(--text-secondary); cursor: pointer; font-size: 14px; font-weight: 500; transition: var(--transition); text-align: left; width: 100%; font-family: inherit; }
+        .nav-btn { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: var(--radius-sm); background: transparent; border: none; color: var(--text-secondary); cursor: pointer; font-size: 13px; font-weight: 500; transition: var(--transition); text-align: left; width: 100%; font-family: inherit; }
         .nav-btn:hover { background: #1e293b; color: var(--text-primary); }
         .nav-btn.active { background: #1a2940; color: var(--accent-cyan); font-weight: 600; box-shadow: inset 3px 0 0 var(--accent-cyan); }
         .nav-btn.pdv-btn { background: #1a2940; color: var(--accent-orange); font-weight: 700; border: 1px solid var(--accent-orange); }
@@ -159,16 +159,16 @@
             <div class="logo-icon">🖨️</div>
             <div class="logo-text"><h2>PrintPocket 3D</h2></div>
         </div>
-        <button class="nav-btn pdv-btn active" data-page="pdv"><span class="nav-icon">🛒</span> PDV</button>
         <button class="nav-btn" data-page="calculadora"><span class="nav-icon">🧮</span> Calculadora</button>
-        <button class="nav-btn" data-page="produtos"><span class="nav-icon">📦</span> Produtos</button>
-        <button class="nav-btn" data-page="estoque"><span class="nav-icon">🏗️</span> Estoque</button>
         <button class="nav-btn" data-page="clientes"><span class="nav-icon">👥</span> Clientes</button>
         <button class="nav-btn" data-page="empresa"><span class="nav-icon">🏢</span> Empresa</button>
-        <button class="nav-btn" data-page="vendas"><span class="nav-icon">💰</span> Vendas</button>
+        <button class="nav-btn" data-page="estoque"><span class="nav-icon">🏗️</span> Estoque</button>
+        <button class="nav-btn pdv-btn active" data-page="pdv"><span class="nav-icon">🛒</span> PDV</button>
+        <button class="nav-btn" data-page="produtos"><span class="nav-icon">📦</span> Produtos</button>
         <button class="nav-btn" data-page="relatorios"><span class="nav-icon">📋</span> Relatórios</button>
+        <button class="nav-btn" data-page="vendas"><span class="nav-icon">💰</span> Vendas</button>
         <div class="sidebar-footer">
-            PrintPocket 3D © 2026<br>v3.1
+            PrintPocket 3D © 2026<br>v3.2
             <div class="save-indicator" id="saveIndicator">💾 Salvo automático</div>
         </div>
     </aside>
@@ -215,20 +215,6 @@
             </div>
         </div>
 
-        <!-- Produtos -->
-        <div class="page" id="page-produtos">
-            <div class="page-header"><div><h1>📦 Produtos</h1></div><button class="btn btn-primary" onclick="abrirFormProduto()">+ Novo</button></div>
-            <div id="formProduto" class="form-card" style="display:none;"><h3 id="formProdutoTitulo">Novo Produto</h3><input type="hidden" id="produtoEditId"><div class="form-row"><div class="form-group"><label>Nome</label><input type="text" id="produtoNome"></div><div class="form-group"><label>Categoria</label><select id="produtoCategoria"><option>Decoração</option><option>Utilitário</option><option>Brinquedo</option><option>Ferramenta</option><option>Cosplay</option><option>Outro</option></select></div><div class="form-group"><label>Preço (R$)</label><input type="number" id="produtoPreco" step="0.01"></div></div><div class="form-row"><div class="form-group"><label>Custo (R$)</label><input type="number" id="produtoCusto" step="0.01"></div><div class="form-group"><label>Peso (g)</label><input type="number" id="produtoPeso" step="0.1"></div><div class="form-group"><label>Tempo (h)</label><input type="number" id="produtoTempo" step="0.1"></div></div><button class="btn btn-primary" onclick="salvarProduto()">💾 Salvar</button><button class="btn btn-secondary" onclick="fecharFormProduto()" style="margin-left:8px;">Cancelar</button></div>
-            <div class="table-container"><table><thead><tr><th>Nome</th><th>Cat.</th><th>Preço</th><th>Custo</th><th>Peso</th><th>Tempo</th><th>Lucro</th><th>Ações</th></tr></thead><tbody id="tabelaProdutos"></tbody></table></div>
-        </div>
-
-        <!-- Estoque -->
-        <div class="page" id="page-estoque">
-            <div class="page-header"><div><h1>🏗️ Estoque</h1></div><button class="btn btn-primary" onclick="abrirFormEstoque()">+ Movimentação</button></div>
-            <div id="formEstoque" class="form-card" style="display:none;"><h3>Movimentação</h3><div class="form-row"><div class="form-group"><label>Produto</label><select id="estoqueProdutoSelect"></select></div><div class="form-group"><label>Tipo</label><select id="estoqueTipo"><option value="entrada">Entrada (+)</option><option value="saida">Saída (-)</option></select></div><div class="form-group"><label>Qtd</label><input type="number" id="estoqueQtd" min="1" value="1"></div></div><button class="btn btn-primary" onclick="salvarMovimentacao()">💾 Registrar</button><button class="btn btn-secondary" onclick="fecharFormEstoque()" style="margin-left:8px;">Cancelar</button></div>
-            <div class="table-container"><table><thead><tr><th>Produto</th><th>Saldo</th><th>Status</th><th>Última Mov.</th></tr></thead><tbody id="tabelaEstoque"></tbody></table></div>
-        </div>
-
         <!-- Clientes -->
         <div class="page" id="page-clientes">
             <div class="page-header"><div><h1>👥 Clientes</h1></div><button class="btn btn-primary" onclick="abrirFormCliente()">+ Novo Cliente</button></div>
@@ -257,11 +243,18 @@
             </div>
         </div>
 
-        <!-- Vendas -->
-        <div class="page" id="page-vendas">
-            <div class="page-header"><div><h1>💰 Vendas</h1></div><button class="btn btn-primary" onclick="abrirFormVenda()">+ Nova</button></div>
-            <div id="formVenda" class="form-card" style="display:none;"><h3 id="formVendaTitulo">Nova Venda</h3><input type="hidden" id="vendaEditId"><div class="form-row"><div class="form-group"><label>Produto</label><select id="vendaProdutoSelect"></select></div><div class="form-group"><label>Qtd</label><input type="number" id="vendaQtd" min="1" value="1"></div><div class="form-group"><label>Desconto (R$)</label><input type="number" id="vendaDesconto" value="0" step="0.01"></div></div><div class="form-row"><div class="form-group"><label>Cliente</label><select id="vendaClienteSelect"><option value="">Avulso</option></select></div><div class="form-group"><label>Pagamento</label><select id="vendaPagamentoSelect"><option>Dinheiro</option><option>Cartão de Crédito</option><option>Cartão de Débito</option><option>Pix</option></select></div></div><div id="vendaPreview" style="margin:10px 0;color:var(--accent-cyan);font-weight:600;"></div><button class="btn btn-primary" onclick="salvarVenda()">✅ Confirmar</button><button class="btn btn-secondary" onclick="fecharFormVenda()" style="margin-left:8px;">Cancelar</button></div>
-            <div class="table-container"><table><thead><tr><th>Data</th><th>Cliente</th><th>Itens</th><th>Total</th><th>Ações</th></tr></thead><tbody id="tabelaVendas"></tbody></table></div>
+        <!-- Estoque -->
+        <div class="page" id="page-estoque">
+            <div class="page-header"><div><h1>🏗️ Estoque</h1></div><button class="btn btn-primary" onclick="abrirFormEstoque()">+ Movimentação</button></div>
+            <div id="formEstoque" class="form-card" style="display:none;"><h3>Movimentação</h3><div class="form-row"><div class="form-group"><label>Produto</label><select id="estoqueProdutoSelect"></select></div><div class="form-group"><label>Tipo</label><select id="estoqueTipo"><option value="entrada">Entrada (+)</option><option value="saida">Saída (-)</option></select></div><div class="form-group"><label>Qtd</label><input type="number" id="estoqueQtd" min="1" value="1"></div></div><button class="btn btn-primary" onclick="salvarMovimentacao()">💾 Registrar</button><button class="btn btn-secondary" onclick="fecharFormEstoque()" style="margin-left:8px;">Cancelar</button></div>
+            <div class="table-container"><table><thead><tr><th>Produto</th><th>Saldo</th><th>Status</th><th>Última Mov.</th></tr></thead><tbody id="tabelaEstoque"></tbody></table></div>
+        </div>
+
+        <!-- Produtos -->
+        <div class="page" id="page-produtos">
+            <div class="page-header"><div><h1>📦 Produtos</h1></div><button class="btn btn-primary" onclick="abrirFormProduto()">+ Novo</button></div>
+            <div id="formProduto" class="form-card" style="display:none;"><h3 id="formProdutoTitulo">Novo Produto</h3><input type="hidden" id="produtoEditId"><div class="form-row"><div class="form-group"><label>Nome</label><input type="text" id="produtoNome"></div><div class="form-group"><label>Categoria</label><select id="produtoCategoria"><option>Decoração</option><option>Utilitário</option><option>Brinquedo</option><option>Ferramenta</option><option>Cosplay</option><option>Outro</option></select></div><div class="form-group"><label>Preço (R$)</label><input type="number" id="produtoPreco" step="0.01"></div></div><div class="form-row"><div class="form-group"><label>Custo (R$)</label><input type="number" id="produtoCusto" step="0.01"></div><div class="form-group"><label>Peso (g)</label><input type="number" id="produtoPeso" step="0.1"></div><div class="form-group"><label>Tempo (h)</label><input type="number" id="produtoTempo" step="0.1"></div></div><button class="btn btn-primary" onclick="salvarProduto()">💾 Salvar</button><button class="btn btn-secondary" onclick="fecharFormProduto()" style="margin-left:8px;">Cancelar</button></div>
+            <div class="table-container"><table><thead><tr><th>Nome</th><th>Cat.</th><th>Preço</th><th>Custo</th><th>Peso</th><th>Tempo</th><th>Lucro</th><th>Ações</th></tr></thead><tbody id="tabelaProdutos"></tbody></table></div>
         </div>
 
         <!-- Relatórios -->
@@ -269,6 +262,13 @@
             <div class="page-header"><div><h1>📋 Relatórios</h1></div><div style="display:flex;gap:8px;"><button class="btn btn-primary" onclick="exportarRelatorioPDF()">📥 PDF</button><button class="btn btn-secondary" onclick="exportarBackup()">💾 Backup</button><button class="btn btn-secondary" onclick="importarBackup()">📂 Restaurar</button></div></div>
             <div class="form-card"><h3>Resumo</h3><div class="cards-grid"><div class="card card-cyan"><div class="card-value" id="relTotalVendas">0</div><div class="card-label">Total Vendas</div></div><div class="card card-green"><div class="card-value" id="relFaturamento">R$ 0</div><div class="card-label">Faturamento</div></div><div class="card card-purple"><div class="card-value" id="relLucroTotal">R$ 0</div><div class="card-label">Lucro</div></div><div class="card card-orange"><div class="card-value" id="relTicketMedio">R$ 0</div><div class="card-label">Ticket Médio</div></div></div></div>
             <div class="table-container" style="margin-top:16px;"><table><thead><tr><th>Data</th><th>Cliente</th><th>Itens</th><th>Total</th></tr></thead><tbody id="tabelaRelatorios"></tbody></table></div>
+        </div>
+
+        <!-- Vendas -->
+        <div class="page" id="page-vendas">
+            <div class="page-header"><div><h1>💰 Vendas</h1></div><button class="btn btn-primary" onclick="abrirFormVenda()">+ Nova</button></div>
+            <div id="formVenda" class="form-card" style="display:none;"><h3 id="formVendaTitulo">Nova Venda</h3><input type="hidden" id="vendaEditId"><div class="form-row"><div class="form-group"><label>Produto</label><select id="vendaProdutoSelect"></select></div><div class="form-group"><label>Qtd</label><input type="number" id="vendaQtd" min="1" value="1"></div><div class="form-group"><label>Desconto (R$)</label><input type="number" id="vendaDesconto" value="0" step="0.01"></div></div><div class="form-row"><div class="form-group"><label>Cliente</label><select id="vendaClienteSelect"><option value="">Avulso</option></select></div><div class="form-group"><label>Pagamento</label><select id="vendaPagamentoSelect"><option>Dinheiro</option><option>Cartão de Crédito</option><option>Cartão de Débito</option><option>Pix</option></select></div></div><div id="vendaPreview" style="margin:10px 0;color:var(--accent-cyan);font-weight:600;"></div><button class="btn btn-primary" onclick="salvarVenda()">✅ Confirmar</button><button class="btn btn-secondary" onclick="fecharFormVenda()" style="margin-left:8px;">Cancelar</button></div>
+            <div class="table-container"><table><thead><tr><th>Data</th><th>Cliente</th><th>Itens</th><th>Total</th><th>Ações</th></tr></thead><tbody id="tabelaVendas"></tbody></table></div>
         </div>
     </main>
 
@@ -352,7 +352,6 @@
                         </div>
                         <div class="nf-rodape">
                             <p>Obrigado por escolher a ${emp.nome}!</p>
-                            <p>Chave Pix: ${PIX_KEY}</p>
                         </div>
                         <div class="nf-botoes">
                             <button class="btn-nf" onclick="fecharNotaFiscal()">Fechar</button>
@@ -408,8 +407,7 @@
                 doc.setFontSize(14); doc.setFont('helvetica', 'bold');
                 doc.text(`TOTAL: R$ ${venda.total.toFixed(2)}`, 140, y, { align: 'right' }); y += 10;
                 doc.setFontSize(8); doc.setFont('helvetica', 'normal');
-                doc.text(`Obrigado por escolher a ${emp.nome}!`, 105, y, { align: 'center' }); y += 4;
-                doc.text(`Chave Pix: ${PIX_KEY}`, 105, y, { align: 'center' });
+                doc.text(`Obrigado por escolher a ${emp.nome}!`, 105, y, { align: 'center' });
                 const nomeArquivo = `Comprovante_${venda.id}_${new Date(venda.data).toLocaleDateString('pt-BR').replace(/\//g,'-')}.pdf`;
                 doc.save(nomeArquivo);
                 showToast(`PDF "${nomeArquivo}" salvo! 📄`);
@@ -459,7 +457,7 @@
                 clearTimeout(t._timeout); t._timeout = setTimeout(() => t.style.display = 'none', 2500);
             }
 
-            // Clientes (mantidos)
+            // Clientes
             function renderTabelaClientes() {
                 const data = getData(); const tb = document.getElementById('tabelaClientes');
                 tb.innerHTML = data.clientes.length ? data.clientes.map(c => {

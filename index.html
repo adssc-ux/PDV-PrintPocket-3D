@@ -115,7 +115,6 @@
         .pix-info .pix-chave { font-size: 13px; font-weight: 600; color: var(--accent-green); }
         .pix-info .pix-valor { font-size: 16px; font-weight: 700; color: var(--accent-cyan); }
 
-        /* Modal Comprovante - Nota Fiscal */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; display: flex; align-items: center; justify-content: center; }
         .nf-modal { background: #ffffff; color: #000000; width: 680px; max-height: 90vh; overflow-y: auto; border-radius: 8px; box-shadow: 0 8px 32px rgba(0,0,0,0.5); position: relative; font-family: 'Arial', sans-serif; }
         .nf-modal * { color: #000000; }
@@ -124,7 +123,7 @@
         .nf-logo p { font-size: 11px; margin: 2px 0; }
         .nf-title { text-align: right; }
         .nf-title h1 { font-size: 18px; font-weight: bold; margin: 0; text-transform: uppercase; }
-        .nf-title .nf-numero { font-size: 14px; font-weight: bold; margin-top: 4px; }
+        .nf-title p { font-size: 11px; margin-top: 4px; }
         .nf-dados { padding: 16px 24px; border-bottom: 1px solid #000; }
         .nf-dados .nf-linha { display: flex; gap: 20px; margin-bottom: 6px; font-size: 12px; }
         .nf-dados .nf-linha strong { display: inline-block; width: 100px; }
@@ -158,17 +157,18 @@
     <aside class="sidebar">
         <div class="sidebar-logo">
             <div class="logo-icon">🖨️</div>
-            <div class="logo-text"><h2>PrintPocket</h2><span>3D Studio</span></div>
+            <div class="logo-text"><h2>PrintPocket 3D</h2></div>
         </div>
         <button class="nav-btn pdv-btn active" data-page="pdv"><span class="nav-icon">🛒</span> PDV</button>
         <button class="nav-btn" data-page="calculadora"><span class="nav-icon">🧮</span> Calculadora</button>
         <button class="nav-btn" data-page="produtos"><span class="nav-icon">📦</span> Produtos</button>
         <button class="nav-btn" data-page="estoque"><span class="nav-icon">🏗️</span> Estoque</button>
         <button class="nav-btn" data-page="clientes"><span class="nav-icon">👥</span> Clientes</button>
+        <button class="nav-btn" data-page="empresa"><span class="nav-icon">🏢</span> Empresa</button>
         <button class="nav-btn" data-page="vendas"><span class="nav-icon">💰</span> Vendas</button>
         <button class="nav-btn" data-page="relatorios"><span class="nav-icon">📋</span> Relatórios</button>
         <div class="sidebar-footer">
-            PrintPocket 3D © 2026<br>v3.0 NF
+            PrintPocket 3D © 2026<br>v3.1
             <div class="save-indicator" id="saveIndicator">💾 Salvo automático</div>
         </div>
     </aside>
@@ -237,6 +237,26 @@
             <div id="clienteHistorico" class="form-card" style="display:none;"><h3>📋 Histórico de <span id="clienteHistoricoNome"></span></h3><div class="table-container"><table><thead><tr><th>Data</th><th>Itens</th><th>Total</th></tr></thead><tbody id="clienteHistoricoBody"></tbody></table></div></div>
         </div>
 
+        <!-- Empresa -->
+        <div class="page" id="page-empresa">
+            <div class="page-header"><div><h1>🏢 Dados da Empresa</h1><p style="color:var(--text-secondary);">Configure suas informações fiscais</p></div></div>
+            <div class="form-card">
+                <h3>Informações do Emitente</h3>
+                <div class="form-row">
+                    <div class="form-group"><label>Nome da Empresa</label><input type="text" id="empresaNome" placeholder="PrintPocket 3D"></div>
+                    <div class="form-group"><label>CNPJ</label><input type="text" id="empresaCnpj" placeholder="00.000.000/0001-00"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>Endereço</label><input type="text" id="empresaEndereco" placeholder="Rua das Impressoras, 123 - São Paulo/SP"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>Telefone</label><input type="text" id="empresaTelefone" placeholder="(11) 99999-0000"></div>
+                    <div class="form-group"><label>Email</label><input type="email" id="empresaEmail" placeholder="contato@printpocket3d.com.br"></div>
+                </div>
+                <button class="btn btn-primary" onclick="salvarEmpresa()">💾 Salvar Dados</button>
+            </div>
+        </div>
+
         <!-- Vendas -->
         <div class="page" id="page-vendas">
             <div class="page-header"><div><h1>💰 Vendas</h1></div><button class="btn btn-primary" onclick="abrirFormVenda()">+ Nova</button></div>
@@ -252,14 +272,17 @@
         </div>
     </main>
 
-    <!-- jsPDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
 
     <script>
         (function() {
             const STORAGE_KEY = 'printpocket3d_data';
+            const EMPRESA_KEY = 'printpocket3d_empresa';
             const PIX_KEY = '99984301604';
+
+            function getEmpresa() { try { const raw = localStorage.getItem(EMPRESA_KEY); return raw ? JSON.parse(raw) : { nome: 'PrintPocket 3D', cnpj: '00.000.000/0001-00', endereco: 'Rua das Impressoras, 123 - São Paulo/SP', telefone: '(11) 99999-0000', email: 'contato@printpocket3d.com.br' }; } catch(e) { return { nome: 'PrintPocket 3D', cnpj: '00.000.000/0001-00', endereco: 'Rua das Impressoras, 123 - São Paulo/SP', telefone: '(11) 99999-0000', email: 'contato@printpocket3d.com.br' }; } }
+            function saveEmpresa(emp) { localStorage.setItem(EMPRESA_KEY, JSON.stringify(emp)); }
             
             function getData() { try { const raw = localStorage.getItem(STORAGE_KEY); return raw ? JSON.parse(raw) : { produtos: [], estoque: {}, movimentacoes: [], vendas: [], clientes: [], nextId: 1 }; } catch(e) { return { produtos: [], estoque: {}, movimentacoes: [], vendas: [], clientes: [], nextId: 1 }; } }
             function saveData(data) { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); document.getElementById('saveIndicator').textContent = '💾 Salvo ' + new Date().toLocaleTimeString(); }
@@ -276,76 +299,50 @@
                     const total = Math.max(0, sub - desc);
                     document.getElementById('pdvPixValor').textContent = 'R$ ' + total.toFixed(2).replace('.', ',');
                     container.style.display = 'block';
-                } else {
-                    container.style.display = 'none';
-                }
+                } else { container.style.display = 'none'; }
             }
 
-            function copiarChavePix() { 
-                navigator.clipboard.writeText(PIX_KEY).then(() => showToast('Chave Pix copiada! 📋')).catch(() => showToast('Erro ao copiar', 'error')); 
-            }
+            function copiarChavePix() { navigator.clipboard.writeText(PIX_KEY).then(() => showToast('Chave Pix copiada!')).catch(() => showToast('Erro', 'error')); }
 
             function mostrarNotaFiscal(vendaId) {
-                const data = getData();
-                const venda = data.vendas.find(v => v.id === vendaId);
+                const data = getData(); const venda = data.vendas.find(v => v.id === vendaId);
                 if (!venda) { showToast('Venda não encontrada!', 'error'); return; }
-                
+                const emp = getEmpresa();
                 const cliente = venda.clienteId ? data.clientes.find(c => c.id === venda.clienteId) : null;
                 const clienteNome = cliente ? cliente.nome : 'Avulso';
                 const clienteTel = cliente ? (cliente.telefone || '—') : '—';
                 const clienteEmail = cliente ? (cliente.email || '—') : '—';
                 const dataFormatada = new Date(venda.data).toLocaleString('pt-BR');
-                const dataCurta = new Date(venda.data).toLocaleDateString('pt-BR');
-                
+
                 let linhasItens = '';
                 venda.itens.forEach((i, idx) => {
-                    linhasItens += `
-                        <tr>
-                            <td>${idx + 1}</td>
-                            <td style="text-align:left;">${i.nome}</td>
-                            <td>${i.qtd}</td>
-                            <td>R$ ${i.preco.toFixed(2)}</td>
-                            <td>R$ ${(i.preco * i.qtd).toFixed(2)}</td>
-                        </tr>
-                    `;
+                    linhasItens += `<tr><td>${idx+1}</td><td style="text-align:left;">${i.nome}</td><td>${i.qtd}</td><td>R$ ${i.preco.toFixed(2)}</td><td>R$ ${(i.preco*i.qtd).toFixed(2)}</td></tr>`;
                 });
-                
+
                 const modalHtml = `
-                    <div class="nf-modal" id="nfModalContent">
+                    <div class="nf-modal">
                         <button class="btn-fechar-nf" onclick="fecharNotaFiscal()">✕</button>
                         <div class="nf-header">
                             <div class="nf-logo">
-                                <h2>PRINTPOCKET 3D STUDIO</h2>
-                                <p>CNPJ: 00.000.000/0001-00</p>
-                                <p>Rua das Impressoras, 123 - São Paulo/SP</p>
-                                <p>Tel: (11) 99999-0000 | contato@printpocket3d.com.br</p>
+                                <h2>${emp.nome}</h2>
+                                <p>CNPJ: ${emp.cnpj} | ${emp.endereco}</p>
+                                <p>Tel: ${emp.telefone} | ${emp.email}</p>
                             </div>
                             <div class="nf-title">
-                                <h1>Nota Fiscal de Venda</h1>
-                                <div class="nf-numero">Nº ${venda.id}</div>
-                                <p style="font-size:11px;">Emissão: ${dataCurta}</p>
+                                <h1>Comprovante de Pagamento</h1>
+                                <p>Emissão: ${dataFormatada}</p>
                             </div>
                         </div>
                         <div class="nf-dados">
                             <div class="nf-linha"><strong>Cliente:</strong> ${clienteNome}</div>
-                            <div class="nf-linha"><strong>Telefone:</strong> ${clienteTel} &nbsp;&nbsp; <strong>Email:</strong> ${clienteEmail}</div>
-                            <div class="nf-linha"><strong>Data/Hora:</strong> ${dataFormatada}</div>
-                            <div class="nf-linha"><strong>Pagamento:</strong> ${venda.pagamento}${venda.pagamento === 'Pix' ? ' (Chave: ' + PIX_KEY + ')' : ''}</div>
+                            <div class="nf-linha"><strong>Telefone:</strong> ${clienteTel}</div>
+                            <div class="nf-linha"><strong>Email:</strong> ${clienteEmail}</div>
+                            <div class="nf-linha"><strong>Pagamento:</strong> ${venda.pagamento}</div>
                         </div>
                         <div class="nf-tabela">
                             <table>
-                                <thead>
-                                    <tr>
-                                        <th>#</th>
-                                        <th style="text-align:left;">Descrição</th>
-                                        <th>Qtd</th>
-                                        <th>Valor Unit.</th>
-                                        <th>Valor Total</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    ${linhasItens}
-                                </tbody>
+                                <thead><tr><th>#</th><th style="text-align:left;">Descrição</th><th>Qtd</th><th>Valor Unit.</th><th>Valor Total</th></tr></thead>
+                                <tbody>${linhasItens}</tbody>
                             </table>
                         </div>
                         <div class="nf-totais">
@@ -354,120 +351,89 @@
                             <div class="nf-total-final">TOTAL: R$ ${venda.total.toFixed(2)}</div>
                         </div>
                         <div class="nf-rodape">
-                            <p>Obrigado por escolher a PrintPocket 3D!</p>
-                            <p>Este documento é um comprovante de venda.</p>
+                            <p>Obrigado por escolher a ${emp.nome}!</p>
+                            <p>Chave Pix: ${PIX_KEY}</p>
                         </div>
                         <div class="nf-botoes">
                             <button class="btn-nf" onclick="fecharNotaFiscal()">Fechar</button>
                             <button class="btn-nf btn-nf-primary" onclick="gerarPDFNotaFiscal(${venda.id})">📥 Gerar PDF e Salvar</button>
                         </div>
-                    </div>
-                `;
-                
-                const oldOverlay = document.getElementById('nfOverlay');
-                if (oldOverlay) oldOverlay.remove();
-                
-                const overlay = document.createElement('div');
-                overlay.className = 'modal-overlay';
-                overlay.id = 'nfOverlay';
-                overlay.innerHTML = modalHtml;
+                    </div>`;
+                const old = document.getElementById('nfOverlay'); if (old) old.remove();
+                const overlay = document.createElement('div'); overlay.className = 'modal-overlay'; overlay.id = 'nfOverlay'; overlay.innerHTML = modalHtml;
                 document.body.appendChild(overlay);
-                
-                overlay.addEventListener('click', function(e) {
-                    if (e.target === overlay) fecharNotaFiscal();
-                });
+                overlay.addEventListener('click', e => { if (e.target === overlay) fecharNotaFiscal(); });
             }
 
-            function fecharNotaFiscal() {
-                const overlay = document.getElementById('nfOverlay');
-                if (overlay) overlay.remove();
-            }
+            function fecharNotaFiscal() { const o = document.getElementById('nfOverlay'); if (o) o.remove(); }
 
             function gerarPDFNotaFiscal(vendaId) {
-                const data = getData();
-                const venda = data.vendas.find(v => v.id === vendaId);
+                const data = getData(); const venda = data.vendas.find(v => v.id === vendaId);
                 if (!venda) { showToast('Venda não encontrada!', 'error'); return; }
-                
+                const emp = getEmpresa();
                 const cliente = venda.clienteId ? data.clientes.find(c => c.id === venda.clienteId) : null;
                 const clienteNome = cliente ? cliente.nome : 'Avulso';
                 const clienteTel = cliente ? (cliente.telefone || '—') : '—';
                 const clienteEmail = cliente ? (cliente.email || '—') : '—';
                 const dataFormatada = new Date(venda.data).toLocaleString('pt-BR');
-                const dataCurta = new Date(venda.data).toLocaleDateString('pt-BR');
-                
+
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-                
                 let y = 10;
-                doc.setFontSize(16);
-                doc.setFont('helvetica', 'bold');
-                doc.text('PRINTPOCKET 3D STUDIO', 105, y, { align: 'center' });
-                y += 6;
-                doc.setFontSize(8);
-                doc.setFont('helvetica', 'normal');
-                doc.text('CNPJ: 00.000.000/0001-00 | Rua das Impressoras, 123 - São Paulo/SP', 105, y, { align: 'center' });
-                y += 4;
-                doc.text('Tel: (11) 99999-0000 | contato@printpocket3d.com.br', 105, y, { align: 'center' });
-                y += 8;
-                
-                doc.setFontSize(14);
-                doc.setFont('helvetica', 'bold');
-                doc.text('NOTA FISCAL DE VENDA', 105, y, { align: 'center' });
-                y += 5;
-                doc.setFontSize(10);
-                doc.setFont('helvetica', 'normal');
-                doc.text(`Nº ${venda.id} - Emissão: ${dataCurta}`, 105, y, { align: 'center' });
-                y += 8;
-                
-                doc.setDrawColor(0);
-                doc.line(10, y, 200, y);
-                y += 6;
-                
-                doc.setFontSize(9);
-                doc.text(`Cliente: ${clienteNome}`, 10, y);
-                doc.text(`Data/Hora: ${dataFormatada}`, 120, y);
-                y += 4;
-                doc.text(`Telefone: ${clienteTel} | Email: ${clienteEmail}`, 10, y);
-                y += 4;
-                doc.text(`Pagamento: ${venda.pagamento}${venda.pagamento === 'Pix' ? ' - Chave Pix: ' + PIX_KEY : ''}`, 10, y);
-                y += 6;
-                
-                doc.line(10, y, 200, y);
-                y += 4;
-                
+                doc.setFontSize(16); doc.setFont('helvetica', 'bold');
+                doc.text(emp.nome, 105, y, { align: 'center' }); y += 6;
+                doc.setFontSize(8); doc.setFont('helvetica', 'normal');
+                doc.text(`CNPJ: ${emp.cnpj} | ${emp.endereco}`, 105, y, { align: 'center' }); y += 4;
+                doc.text(`Tel: ${emp.telefone} | ${emp.email}`, 105, y, { align: 'center' }); y += 8;
+                doc.setFontSize(14); doc.setFont('helvetica', 'bold');
+                doc.text('COMPROVANTE DE PAGAMENTO', 105, y, { align: 'center' }); y += 5;
+                doc.setFontSize(9); doc.setFont('helvetica', 'normal');
+                doc.text(`Emissão: ${dataFormatada}`, 105, y, { align: 'center' }); y += 8;
+                doc.line(10, y, 200, y); y += 6;
+                doc.text(`Cliente: ${clienteNome}`, 10, y); y += 4;
+                doc.text(`Telefone: ${clienteTel}`, 10, y); y += 4;
+                doc.text(`Email: ${clienteEmail}`, 10, y); y += 4;
+                doc.text(`Pagamento: ${venda.pagamento}`, 10, y); y += 6;
+                doc.line(10, y, 200, y); y += 4;
                 doc.autoTable({
-                    startY: y,
-                    head: [['#', 'Descrição', 'Qtd', 'Valor Unit.', 'Valor Total']],
-                    body: venda.itens.map((i, idx) => [idx + 1, i.nome, i.qtd, 'R$ ' + i.preco.toFixed(2), 'R$ ' + (i.preco * i.qtd).toFixed(2)]),
-                    theme: 'grid',
-                    headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold', halign: 'center' },
-                    styles: { halign: 'center', fontSize: 9, cellPadding: 2 },
-                    columnStyles: { 1: { halign: 'left' } }
+                    startY: y, head: [['#', 'Descrição', 'Qtd', 'Valor Unit.', 'Valor Total']],
+                    body: venda.itens.map((i, idx) => [idx+1, i.nome, i.qtd, 'R$ '+i.preco.toFixed(2), 'R$ '+(i.preco*i.qtd).toFixed(2)]),
+                    theme: 'grid', headStyles: { fillColor: [240,240,240], textColor: [0,0,0], fontStyle: 'bold' },
+                    styles: { halign: 'center', fontSize: 9, cellPadding: 2 }, columnStyles: { 1: { halign: 'left' } }
                 });
-                
                 y = doc.lastAutoTable.finalY + 8;
-                
-                doc.line(10, y, 200, y);
-                y += 5;
-                doc.setFontSize(10);
-                doc.text(`Subtotal: R$ ${venda.subtotal.toFixed(2)}`, 140, y, { align: 'right' });
-                y += 5;
-                doc.text(`Desconto: R$ ${venda.desconto.toFixed(2)}`, 140, y, { align: 'right' });
-                y += 6;
-                doc.setFontSize(14);
-                doc.setFont('helvetica', 'bold');
-                doc.text(`TOTAL: R$ ${venda.total.toFixed(2)}`, 140, y, { align: 'right' });
-                y += 10;
-                
-                doc.setFontSize(8);
-                doc.setFont('helvetica', 'normal');
-                doc.text('Obrigado por escolher a PrintPocket 3D!', 105, y, { align: 'center' });
-                y += 4;
-                doc.text('Este documento é um comprovante de venda.', 105, y, { align: 'center' });
-                
-                const nomeArquivo = `NF_PrintPocket_${venda.id}_${dataCurta.replace(/\//g, '-')}.pdf`;
+                doc.line(10, y, 200, y); y += 5;
+                doc.text(`Subtotal: R$ ${venda.subtotal.toFixed(2)}`, 140, y, { align: 'right' }); y += 5;
+                doc.text(`Desconto: R$ ${venda.desconto.toFixed(2)}`, 140, y, { align: 'right' }); y += 6;
+                doc.setFontSize(14); doc.setFont('helvetica', 'bold');
+                doc.text(`TOTAL: R$ ${venda.total.toFixed(2)}`, 140, y, { align: 'right' }); y += 10;
+                doc.setFontSize(8); doc.setFont('helvetica', 'normal');
+                doc.text(`Obrigado por escolher a ${emp.nome}!`, 105, y, { align: 'center' }); y += 4;
+                doc.text(`Chave Pix: ${PIX_KEY}`, 105, y, { align: 'center' });
+                const nomeArquivo = `Comprovante_${venda.id}_${new Date(venda.data).toLocaleDateString('pt-BR').replace(/\//g,'-')}.pdf`;
                 doc.save(nomeArquivo);
-                showToast(`PDF "${nomeArquivo}" salvo com sucesso! 📄`);
+                showToast(`PDF "${nomeArquivo}" salvo! 📄`);
+            }
+
+            function salvarEmpresa() {
+                const emp = {
+                    nome: document.getElementById('empresaNome').value.trim() || 'PrintPocket 3D',
+                    cnpj: document.getElementById('empresaCnpj').value.trim() || '00.000.000/0001-00',
+                    endereco: document.getElementById('empresaEndereco').value.trim() || 'Rua das Impressoras, 123 - São Paulo/SP',
+                    telefone: document.getElementById('empresaTelefone').value.trim() || '(11) 99999-0000',
+                    email: document.getElementById('empresaEmail').value.trim() || 'contato@printpocket3d.com.br'
+                };
+                saveEmpresa(emp);
+                showToast('Dados da empresa salvos! 🏢');
+            }
+
+            function carregarEmpresaForm() {
+                const emp = getEmpresa();
+                document.getElementById('empresaNome').value = emp.nome || '';
+                document.getElementById('empresaCnpj').value = emp.cnpj || '';
+                document.getElementById('empresaEndereco').value = emp.endereco || '';
+                document.getElementById('empresaTelefone').value = emp.telefone || '';
+                document.getElementById('empresaEmail').value = emp.email || '';
             }
 
             const navBtns = document.querySelectorAll('.nav-btn');
@@ -480,6 +446,7 @@
                 if (p === 'produtos') renderTabelaProdutos();
                 if (p === 'estoque') { renderTabelaEstoque(); preencherSelectEstoque(); }
                 if (p === 'clientes') renderTabelaClientes();
+                if (p === 'empresa') carregarEmpresaForm();
                 if (p === 'vendas') { preencherSelectVenda(); preencherSelectClienteVenda(); renderTabelaVendas(); }
                 if (p === 'relatorios') atualizarRelatorios();
                 if (p === 'calculadora') calcularCusto();
@@ -492,7 +459,7 @@
                 clearTimeout(t._timeout); t._timeout = setTimeout(() => t.style.display = 'none', 2500);
             }
 
-            // Clientes
+            // Clientes (mantidos)
             function renderTabelaClientes() {
                 const data = getData(); const tb = document.getElementById('tabelaClientes');
                 tb.innerHTML = data.clientes.length ? data.clientes.map(c => {
@@ -571,11 +538,9 @@
                 for(const i of carrinhoPDV) { totalGeral+=i.preco*i.qtd; data.estoque[i.produtoId]-=i.qtd; data.movimentacoes.push({produtoId:i.produtoId,tipo:'saida',qtd:i.qtd,data:dataVenda,motivo:'venda_pdv'}); itens.push({produtoId:i.produtoId, nome:i.nome, preco:i.preco, custo:i.custo, qtd:i.qtd}); }
                 const totalFinal = Math.max(0, totalGeral - descTotal);
                 const venda = { id: data.nextId++, data: dataVenda, clienteId, itens, subtotal: totalGeral, desconto: descTotal, total: parseFloat(totalFinal.toFixed(2)), pagamento: pag };
-                data.vendas.push(venda);
-                saveData(data); 
-                showToast(`Venda #${venda.id} finalizada! Total: R$ ${totalFinal.toFixed(2).replace('.',',')}`);
+                data.vendas.push(venda); saveData(data);
+                showToast(`Venda finalizada! Total: R$ ${totalFinal.toFixed(2)}`);
                 mostrarNotaFiscal(venda.id);
-                
                 const hoje = new Date().toLocaleDateString('pt-BR'), vHoje=data.vendas.filter(v=>new Date(v.data).toLocaleDateString('pt-BR')===hoje);
                 document.getElementById('pdvUltimasVendas').innerHTML = `<span>Hoje:</span> ${vHoje.length} vendas · R$ ${vHoje.reduce((s,v)=>s+v.total,0).toFixed(2).replace('.',',')}`;
                 document.getElementById('pdvPixInfo').style.display='none';
@@ -611,7 +576,7 @@
             function abrirFormVenda(){ document.getElementById('vendaEditId').value=''; document.getElementById('formVendaTitulo').textContent='Nova Venda'; preencherSelectVenda(); preencherSelectClienteVenda(); document.getElementById('formVenda').style.display='block'; document.getElementById('vendaQtd').value='1'; document.getElementById('vendaDesconto').value='0'; document.getElementById('vendaPagamentoSelect').value='Dinheiro'; atualizarPreviewVenda(); }
             function fecharFormVenda(){ document.getElementById('formVenda').style.display='none'; }
             function salvarVenda(){ return registrarVendaSimples(); }
-            function registrarVendaSimples(){ const d=getData(); const pid=parseInt(document.getElementById('vendaProdutoSelect').value), q=parseInt(document.getElementById('vendaQtd').value)||0, desc=parseFloat(document.getElementById('vendaDesconto').value)||0, clienteId=document.getElementById('vendaClienteSelect').value?parseInt(document.getElementById('vendaClienteSelect').value):null, pag=document.getElementById('vendaPagamentoSelect').value||'Dinheiro'; if(!pid||q<=0){ showToast('Preencha corretamente','error'); return; } const prod=d.produtos.find(p=>p.id===pid); if(!prod)return; if((d.estoque[pid]||0)<q){ showToast('Estoque insuficiente','error'); return; } const total=Math.max(0,prod.preco*q-desc); d.estoque[pid]-=q; d.movimentacoes.push({produtoId:pid,tipo:'saida',qtd:q,data:new Date().toISOString(),motivo:'venda'}); const venda = {id:d.nextId++,data:new Date().toISOString(),clienteId,itens:[{produtoId:pid,nome:prod.nome,preco:prod.preco,custo:prod.custo,qtd:q}],subtotal:prod.preco*q,desconto:desc,total:parseFloat(total.toFixed(2)),pagamento:pag}; d.vendas.push(venda); saveData(d); fecharFormVenda(); renderTabelaVendas(); renderTabelaEstoque(); showToast(`Venda #${venda.id}: R$ ${total.toFixed(2)}`); mostrarNotaFiscal(venda.id); }
+            function registrarVendaSimples(){ const d=getData(); const pid=parseInt(document.getElementById('vendaProdutoSelect').value), q=parseInt(document.getElementById('vendaQtd').value)||0, desc=parseFloat(document.getElementById('vendaDesconto').value)||0, clienteId=document.getElementById('vendaClienteSelect').value?parseInt(document.getElementById('vendaClienteSelect').value):null, pag=document.getElementById('vendaPagamentoSelect').value||'Dinheiro'; if(!pid||q<=0){ showToast('Preencha corretamente','error'); return; } const prod=d.produtos.find(p=>p.id===pid); if(!prod)return; if((d.estoque[pid]||0)<q){ showToast('Estoque insuficiente','error'); return; } const total=Math.max(0,prod.preco*q-desc); d.estoque[pid]-=q; d.movimentacoes.push({produtoId:pid,tipo:'saida',qtd:q,data:new Date().toISOString(),motivo:'venda'}); const venda = {id:d.nextId++,data:new Date().toISOString(),clienteId,itens:[{produtoId:pid,nome:prod.nome,preco:prod.preco,custo:prod.custo,qtd:q}],subtotal:prod.preco*q,desconto:desc,total:parseFloat(total.toFixed(2)),pagamento:pag}; d.vendas.push(venda); saveData(d); fecharFormVenda(); renderTabelaVendas(); renderTabelaEstoque(); showToast(`Venda: R$ ${total.toFixed(2)}`); mostrarNotaFiscal(venda.id); }
             function excluirVenda(id){ if(!confirm('Excluir venda? Estoque será restaurado.'))return; const d=getData(); const v=d.vendas.find(v=>v.id===id); if(v){ v.itens.forEach(i=>{ d.estoque[i.produtoId]=(d.estoque[i.produtoId]||0)+i.qtd; }); d.vendas=d.vendas.filter(v=>v.id!==id); saveData(d); renderTabelaVendas(); renderTabelaEstoque(); showToast('Venda excluída.'); } }
             function renderTabelaVendas(){ const d=getData(); document.getElementById('tabelaVendas').innerHTML = d.vendas.length ? [...d.vendas].reverse().map(v=>{ const cliente = v.clienteId ? (d.clientes.find(c=>c.id===v.clienteId)?.nome||'—') : 'Avulso'; return `<tr><td>${new Date(v.data).toLocaleDateString('pt-BR')}</td><td>${cliente}</td><td>${v.itens.map(i=>`${i.nome}(${i.qtd})`).join(', ')}</td><td>R$ ${v.total.toFixed(2)}</td><td><button class="btn btn-secondary btn-sm" onclick="mostrarNotaFiscal(${v.id})">🧾</button> <button class="btn btn-danger btn-sm" onclick="excluirVenda(${v.id})">🗑️</button></td></tr>`; }).join('') : '<tr><td colspan="5">Nenhuma venda</td></tr>'; }
 
@@ -635,8 +600,7 @@
                     data.produtos = [{id:1,nome:'Suporte Celular',categoria:'Utilitário',preco:35,custo:12,peso:45,tempo:3.5},{id:2,nome:'Vaso Geométrico',categoria:'Decoração',preco:55,custo:20,peso:80,tempo:6},{id:3,nome:'Chaveiro',categoria:'Utilitário',preco:15,custo:4,peso:8,tempo:0.8}];
                     data.estoque = {1:12,2:5,3:30};
                     data.clientes = [{id:1,nome:'João Silva',telefone:'(11) 99999-0001',email:'joao@email.com'},{id:2,nome:'Maria Souza',telefone:'(21) 98888-0002',email:'maria@email.com'}];
-                    data.nextId = 4;
-                    saveData(data);
+                    data.nextId = 4; saveData(data);
                 }
                 renderTabelaProdutos(); renderTabelaEstoque(); renderTabelaClientes(); renderTabelaVendas(); atualizarRelatorios(); calcularCusto();
                 preencherSelectEstoque(); preencherSelectVenda(); preencherSelectClientePDV(); preencherSelectClienteVenda();
@@ -653,6 +617,7 @@
             window.calcularCusto=calcularCusto; window.exportarRelatorioPDF=exportarRelatorioPDF; window.exportarBackup=exportarBackup; window.importarBackup=importarBackup;
             window.mostrarInfoPixPDV=mostrarInfoPixPDV; window.copiarChavePix=copiarChavePix;
             window.mostrarNotaFiscal=mostrarNotaFiscal; window.fecharNotaFiscal=fecharNotaFiscal; window.gerarPDFNotaFiscal=gerarPDFNotaFiscal;
+            window.salvarEmpresa=salvarEmpresa; window.carregarEmpresaForm=carregarEmpresaForm;
             init();
         })();
     </script>

@@ -115,20 +115,39 @@
         .pix-info .pix-chave { font-size: 13px; font-weight: 600; color: var(--accent-green); }
         .pix-info .pix-valor { font-size: 16px; font-weight: 700; color: var(--accent-cyan); }
 
+        /* Comprovante Térmico - 80mm */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; display: flex; align-items: center; justify-content: center; }
-        .comprovante { background: white; color: #000000; padding: 30px; border-radius: var(--radius); max-width: 500px; width: 90%; font-family: 'Courier New', monospace; box-shadow: 0 8px 32px rgba(0,0,0,0.5); position: relative; }
-        .comprovante * { color: #000000 !important; }
-        .comprovante h2 { text-align: center; margin-bottom: 20px; font-size: 20px; color: #000000 !important; }
-        .comprovante .linha { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px; }
-        .comprovante .linha strong { color: #000000 !important; }
-        .comprovante .divisor { border-top: 1px dashed #000000; margin: 12px 0; }
-        .comprovante .total { font-size: 20px; font-weight: bold; text-align: right; color: #000000 !important; }
-        .comprovante .btn-fechar { position: absolute; top: 10px; right: 10px; background: none; border: none; font-size: 20px; cursor: pointer; color: #000000 !important; }
-        .comprovante .btn-imprimir { display: block; margin: 20px auto 0; padding: 10px 30px; background: #00e5ff; color: #000000 !important; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 14px; }
+        .comprovante-termico { 
+            background: #ffffff; 
+            color: #000000; 
+            padding: 8px 6px; 
+            width: 280px; 
+            font-family: 'Courier New', monospace; 
+            font-size: 11px; 
+            line-height: 1.2;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+            border-radius: 4px;
+            position: relative;
+        }
+        .comprovante-termico * { color: #000000 !important; font-size: 11px; }
+        .comprovante-termico .titulo { text-align: center; font-size: 14px; font-weight: bold; margin-bottom: 4px; }
+        .comprovante-termico .subtitulo { text-align: center; font-size: 10px; margin-bottom: 8px; border-bottom: 1px dashed #000; padding-bottom: 4px; }
+        .comprovante-termico .linha { display: flex; justify-content: space-between; margin-bottom: 2px; }
+        .comprovante-termico .linha span { font-size: 11px; }
+        .comprovante-termico .linha strong { font-size: 11px; }
+        .comprovante-termico .divisor { border-top: 1px dashed #000; margin: 6px 0; }
+        .comprovante-termico .total { font-size: 16px; font-weight: bold; text-align: right; margin-top: 4px; }
+        .comprovante-termico .rodape { text-align: center; margin-top: 8px; font-size: 9px; }
+        .comprovante-termico .btn-fechar { position: absolute; top: 4px; right: 6px; background: none; border: none; cursor: pointer; font-size: 16px; color: #000 !important; }
+        .comprovante-termico .btn-imprimir { display: block; margin: 10px auto 0; padding: 6px 20px; background: #e0e0e0; border: 1px solid #999; border-radius: 3px; cursor: pointer; font-size: 11px; }
+
         @media print {
-            .comprovante .btn-imprimir, .comprovante .btn-fechar { display: none !important; }
-            .modal-overlay { background: white; }
-            .comprovante { box-shadow: none; border-radius: 0; }
+            @page { size: 80mm auto; margin: 0; }
+            body * { visibility: hidden; }
+            .comprovante-termico, .comprovante-termico * { visibility: visible; }
+            .comprovante-termico { position: absolute; left: 0; top: 0; width: 80mm; box-shadow: none; border-radius: 0; }
+            .comprovante-termico .btn-fechar, .comprovante-termico .btn-imprimir { display: none !important; }
+            .modal-overlay { background: white; position: static; }
         }
 
         @media (max-width: 768px) {
@@ -156,7 +175,7 @@
         <button class="nav-btn" data-page="vendas"><span class="nav-icon">💰</span> Vendas</button>
         <button class="nav-btn" data-page="relatorios"><span class="nav-icon">📋</span> Relatórios</button>
         <div class="sidebar-footer">
-            PrintPocket 3D © 2026<br>v2.8
+            PrintPocket 3D © 2026<br>v2.9 Térmica
             <div class="save-indicator" id="saveIndicator">💾 Salvo automático</div>
         </div>
     </aside>
@@ -276,50 +295,64 @@
                 
                 const cliente = venda.clienteId ? data.clientes.find(c => c.id === venda.clienteId) : null;
                 const clienteNome = cliente ? cliente.nome : 'Avulso';
+                const dataFormatada = new Date(venda.data).toLocaleString('pt-BR');
                 
-                const overlay = document.createElement('div');
-                overlay.className = 'modal-overlay';
-                overlay.id = 'comprovanteOverlay';
+                let itensHtml = '';
+                venda.itens.forEach(i => {
+                    itensHtml += `
+                        <div class="linha">
+                            <span>${i.nome.substring(0, 14)}</span>
+                            <span>${i.qtd}x R$${i.preco.toFixed(2)}</span>
+                            <span>R$${(i.preco * i.qtd).toFixed(2)}</span>
+                        </div>
+                    `;
+                });
                 
-                overlay.innerHTML = `
-                    <div class="comprovante">
-                        <button class="btn-fechar" onclick="document.getElementById('comprovanteOverlay').remove()">✕</button>
-                        <h2>PrintPocket 3D</h2>
-                        <p style="text-align:center;font-size:12px;margin-bottom:16px;">Comprovante de Venda</p>
-                        <div class="linha"><span>Data:</span><strong>${new Date(venda.data).toLocaleString('pt-BR')}</strong></div>
+                const comprovanteHtml = `
+                    <div class="comprovante-termico" id="comprovantePrint">
+                        <button class="btn-fechar" onclick="fecharComprovante()">✕</button>
+                        <div class="titulo">PRINTPOCKET 3D</div>
+                        <div class="subtitulo">Comprovante de Venda</div>
+                        <div class="linha"><span>Data:</span><strong>${dataFormatada}</strong></div>
                         <div class="linha"><span>Venda Nº:</span><strong>${venda.id}</strong></div>
                         <div class="linha"><span>Cliente:</span><strong>${clienteNome}</strong></div>
                         <div class="linha"><span>Pagamento:</span><strong>${venda.pagamento}</strong></div>
-                        ${venda.pagamento === 'Pix' ? `<div class="linha"><span>Chave Pix:</span><strong>${PIX_KEY}</strong></div>` : ''}
+                        ${venda.pagamento === 'Pix' ? `<div class="linha"><span>Pix:</span><strong>${PIX_KEY}</strong></div>` : ''}
                         <div class="divisor"></div>
-                        <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1.5fr;gap:4px;margin-bottom:6px;font-weight:bold;font-size:12px;">
-                            <span>Produto</span><span>Qtd</span><span>Unit.</span><span>Total</span>
+                        <div style="font-weight:bold;display:flex;justify-content:space-between;margin-bottom:2px;">
+                            <span>Item</span><span>Qtd/Un</span><span>Total</span>
                         </div>
-                        ${venda.itens.map(i => `
-                            <div class="linha" style="font-size:13px;">
-                                <span style="flex:2;">${i.nome}</span>
-                                <span style="flex:1;text-align:center;">${i.qtd}</span>
-                                <span style="flex:1;text-align:right;">R$ ${i.preco.toFixed(2).replace('.', ',')}</span>
-                                <span style="flex:1.5;text-align:right;">R$ ${(i.preco * i.qtd).toFixed(2).replace('.', ',')}</span>
-                            </div>
-                        `).join('')}
+                        ${itensHtml}
                         <div class="divisor"></div>
-                        <div class="linha"><span>Subtotal:</span><span>R$ ${venda.subtotal.toFixed(2).replace('.', ',')}</span></div>
-                        <div class="linha"><span>Desconto:</span><span>R$ ${venda.desconto.toFixed(2).replace('.', ',')}</span></div>
-                        <div class="total" style="margin-top:8px;">TOTAL: R$ ${venda.total.toFixed(2).replace('.', ',')}</div>
-                        <p style="text-align:center;margin-top:16px;font-size:11px;">Obrigado pela preferência!</p>
-                        <button class="btn-imprimir" onclick="window.print()">🖨️ Imprimir Comprovante</button>
+                        <div class="linha"><span>Subtotal:</span><span>R$${venda.subtotal.toFixed(2)}</span></div>
+                        <div class="linha"><span>Desconto:</span><span>R$${venda.desconto.toFixed(2)}</span></div>
+                        <div class="total">TOTAL: R$${venda.total.toFixed(2)}</div>
+                        <div class="rodape">Obrigado pela preferência!</div>
+                        <button class="btn-imprimir" onclick="imprimirComprovante()">🖨️ Imprimir</button>
                     </div>
                 `;
                 
                 const oldOverlay = document.getElementById('comprovanteOverlay');
                 if (oldOverlay) oldOverlay.remove();
                 
+                const overlay = document.createElement('div');
+                overlay.className = 'modal-overlay';
+                overlay.id = 'comprovanteOverlay';
+                overlay.innerHTML = comprovanteHtml;
                 document.body.appendChild(overlay);
                 
                 overlay.addEventListener('click', function(e) {
-                    if (e.target === overlay) overlay.remove();
+                    if (e.target === overlay) fecharComprovante();
                 });
+            }
+
+            function fecharComprovante() {
+                const overlay = document.getElementById('comprovanteOverlay');
+                if (overlay) overlay.remove();
+            }
+
+            function imprimirComprovante() {
+                window.print();
             }
 
             const navBtns = document.querySelectorAll('.nav-btn');
@@ -504,6 +537,7 @@
             window.adicionarAoCarrinhoPDV=adicionarAoCarrinhoPDV; window.removerDoCarrinhoPDV=removerDoCarrinhoPDV; window.alterarQtdPDV=alterarQtdPDV; window.limparCarrinhoPDV=limparCarrinhoPDV; window.finalizarVendaPDV=finalizarVendaPDV;
             window.calcularCusto=calcularCusto; window.exportarRelatorioPDF=exportarRelatorioPDF; window.exportarBackup=exportarBackup; window.importarBackup=importarBackup;
             window.mostrarInfoPixPDV=mostrarInfoPixPDV; window.copiarChavePix=copiarChavePix; window.mostrarComprovante=mostrarComprovante;
+            window.fecharComprovante=fecharComprovante; window.imprimirComprovante=imprimirComprovante;
             init();
         })();
     </script>
